@@ -4,6 +4,7 @@ import google from "../assets/google.svg";
 import rightImage from "../assets/humanSignin.png";
 import InputField from "../components/InputField";
 import "../index.css";
+import { Link } from "react-router-dom";
 //functional component
 const SignIn = () => {
   return (
@@ -58,9 +59,9 @@ const SignIn = () => {
           </div>
           <div className="flex-center mt-4">
             <p>Don’t have an account?</p>
-            <a href="/login" className="text-primary ml-2">
+            <Link to="/login" className="text-primary ml-2">
               Signup
-            </a>
+            </Link>
           </div>
         </form>
       </div>

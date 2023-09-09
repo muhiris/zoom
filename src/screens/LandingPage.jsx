@@ -9,30 +9,32 @@ import testimo2 from "../assets/testimo2.png";
 import testimo3 from "../assets/testimo3.png";
 import GridCompaniesName from "../components/GridCompaniesName";
 import Testimonial from "../components/Testimonial";
-import { AiOutlinePlus } from "react-icons/ai";
+import { AiOutlinePlus,AiOutlineTag } from "react-icons/ai";
+import {SlMicrophone,SlSocialDropbox} from "react-icons/sl";
+import {TbMoneybag} from "react-icons/tb";
+import {PiBankLight} from "react-icons/pi";
 import {
-  SiGooglescholar,
-  SiPaypal,
-  SiGoogle,
+  SiSemanticscholar,
   SiWorldhealthorganization,
   SiAdobecreativecloud,
   SiShopify,
+  SiAirplayvideo
 } from "react-icons/si";
 import LetStart from "../components/LetStart";
 import Footer from "../components/Footer";
 
 function Home() {
   const categories = [
-    { icon: <SiGooglescholar />, text: "Education" },
-    { icon: <SiPaypal />, text: "Financial Service" },
-    { icon: <SiGoogle />, text: "Government" },
-    { icon: <SiWorldhealthorganization />, text: "Healthcare" },
-    { icon: <SiAdobecreativecloud />, text: "Manufacturing" },
-    { icon: <SiShopify />, text: "Retail" },
+    { icon: <SiSemanticscholar className="text-4xl"/>, text: "Education" },
+    { icon: <TbMoneybag className="text-4xl"/>, text: "Financial Service" },
+    { icon: <PiBankLight className="text-4xl"/>, text: "Government" },
+    { icon: <SiWorldhealthorganization className="text-4xl"/>, text: "Healthcare" },
+    { icon: <SlSocialDropbox className="text-4xl"/>, text: "Manufacturing" },
+    { icon: <AiOutlineTag className="text-4xl"/>, text: "Retail" },
   ];
   const systemFunctions = [
     {
-      icon: <SiAdobecreativecloud />,
+      icon: <SiAirplayvideo />,
       text: "HD Video Calling",
       p: "HD is a must to enhance immersion and boost employee engagement. They expect to",
     },
@@ -42,13 +44,13 @@ function Home() {
       p: "HD is a must to enhance immersion and boost employee engagement. They expect to",
     },
     {
-      icon: <SiAdobecreativecloud />,
+      icon: <SlMicrophone />,
       text: "Recording",
       p: "HD is a must to enhance immersion and boost employee engagement. They expect to",
     },
   ];
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden ">
       <Navbar />
       <HeroSection
         heading={"One Platform To Collaborate"}
@@ -67,12 +69,12 @@ function Home() {
       </div>
       <GridCompaniesName />
       <div className="text-center w-100 my-20">
-        <h1 className=" font-medium text-4xl mb-4">How zoom works.</h1>
+        <h1 className=" font-medium text-4xl mb-4 ">How zoom works.</h1>
         <p className="text-xl">
           Connect people, and collaborate better together everywhere in between.
         </p>
       </div>
-      <div className="relative">
+      <div className=" pr-4 relative">
         <img
           src={line}
           alt=""
@@ -124,10 +126,10 @@ function Home() {
           {categories.map((category, index) => (
             <div
               key={index}
-              className="w-[200px] h-[150px]  text-3xl border-2 flex flex-col items-center justify-center border-gray-200 rounded-xl"
+              className="w-[250px] h-[150px]  text-2xl border-2 flex flex-col items-center justify-center border-gray-200 rounded-xl"
             >
               {category.icon}
-              <h1 className="text-2xl font-medium">{category.text}</h1>
+              <h1 className="text-2xl mt-2">{category.text}</h1>
             </div>
           ))}
         </div>
@@ -136,7 +138,7 @@ function Home() {
         Zoom Conference System Features{" "}
       </h1>
 
-      <div className="flex flex-col items-center  justify-center lg:flex-row">
+      <div className="pr-4 flex flex-col items-center  justify-center lg:flex-row">
         {systemFunctions.map((item, index) => (
           <div
             key={index}
@@ -144,7 +146,7 @@ function Home() {
           >
             {item.icon}
             <h1 className="text-2xl font-medium">{item.text}</h1>
-            <p className="text-xl">{item.p} </p>
+            <p className="text-xl text-center">{item.p} </p>
           </div>
         ))}
       </div>

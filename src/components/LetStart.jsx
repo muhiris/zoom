@@ -3,7 +3,7 @@ import React from "react";
 function LetStart() {
   return (
     <div className="my-10 bg-white flex-center">
-      <div className="w-full bg-[#D8E0EF] lg:w-[80%] p-20 rounded-xl flex flex-col items-center justify-center">
+      <div className="w-full bg-[#D8E0EF] lg:w-[80%] px-2 py-20 rounded-xl flex flex-col items-center justify-center">
         <div className="flex flex-col gap-4 lg:flex-row">
           <button className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 hover:bg-primary hover:text-white">
             Get Started

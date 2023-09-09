@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import {AiOutlineEyeInvisible} from "react-icons/ai";
 function InputField({ label, type, id, placeholder }) {
   let labelHTML = label.toLowerCase();
   const [password, setPassword] = useState("");
@@ -20,14 +20,18 @@ function InputField({ label, type, id, placeholder }) {
           <label htmlFor={labelHTML} className="py-2">
             {label}
           </label>
+          <div className="flex items-center text-gray-800 border border-gray-300 rounded-lg focus:border-primary">
           <input
             type={type}
             id={id}
-            className="px-4 py-2 outline-none text-gray-800 border border-gray-300 rounded-lg focus:border-primary"
+            className="px-4 lg:pl-4 lg:pr-24 py-2 outline-none border-gray-300 rounded-lg"
             placeholder={placeholder}
             onChange={handlePassword}
             required
           />
+          <AiOutlineEyeInvisible className="text-2xl mr-2"/>
+          </div>
+         
 
           <p className="text-red-500">{passwordError}</p>
         </>
@@ -39,7 +43,7 @@ function InputField({ label, type, id, placeholder }) {
           <input
             type={type}
             id={id}
-            className="px-4 py-2 outline-none text-gray-800 border border-gray-300 rounded-lg focus:border-primary"
+            className="px-4 lg:pl-4 lg:pr-24 py-2 outline-none text-gray-800 border border-gray-300 rounded-lg focus:border-primary"
             placeholder={placeholder}
             required
           />
