@@ -146,7 +146,7 @@ function Home() {
           >
             {item.icon}
             <h1 className="text-2xl font-medium">{item.text}</h1>
-            <p className="text-xl">{item.p} </p>
+            <p className="text-xl text-center">{item.p} </p>
           </div>
         ))}
       </div>
