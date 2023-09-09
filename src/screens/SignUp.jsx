@@ -6,6 +6,7 @@ import section from "../assets/Section.png";
 import InputField from "../components/InputField";
 
 import "../index.css";
+import { Link } from "react-router-dom";
 //functional component
 const SignUp = () => {
   return (
@@ -52,9 +53,9 @@ const SignUp = () => {
           </div>
           <div className="flex-center mt-4">
             <p>Already have an account?</p>
-            <a href="/login" className="text-primary ml-2">
+            <Link to="/login" className="text-primary ml-2">
               Log in
-            </a>
+            </Link>
           </div>
         </form>
       </div>
