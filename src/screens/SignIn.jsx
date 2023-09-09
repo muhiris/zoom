@@ -16,7 +16,7 @@ const SignIn = () => {
           </p>
         </div>
 
-        <form className="flex flex-col ">
+        <form action="/home" className="flex flex-col ">
           <InputField
             label={"Email"}
             type={"text"}

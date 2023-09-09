@@ -15,7 +15,7 @@ const SignUp = () => {
           <h1 className="text-4xl font-medium text-gray-900 mb-4">Sign Up</h1>
         </div>
 
-        <form className="flex flex-col ">
+        <form action="/login" className="flex flex-col ">
           <InputField
             label={"Name*"}
             type={"text"}
