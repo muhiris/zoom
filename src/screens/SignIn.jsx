@@ -7,8 +7,8 @@ import "../index.css";
 //functional component
 const SignIn = () => {
   return (
-    <div className="overflow-hidden h-[100vh] flex items-center justify-center lg:justify-between">
-      <div className="flex-start flex-col lg:ml-40">
+    <div className="overflow-hidden h-[100vh] flex items-center justify-center lg:justify-between ">
+      <div className="flex-start flex-col lg:ml-40  lg:min-w-[30%]  ">
         <div>
           <h1 className="text-4xl font-medium text-gray-900">Welcome Back</h1>
           <p className="font-normal text-gray-600">
@@ -16,7 +16,7 @@ const SignIn = () => {
           </p>
         </div>
 
-        <form action="/home" className="flex flex-col ">
+        <form action="/home" className="flex flex-col  w-full   ">
           <InputField
             label={"Email"}
             type={"text"}
