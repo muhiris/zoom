@@ -5,7 +5,7 @@ function HeroSection({ heading, paragraph, btn1, btn2, img }) {
   return (
     <>
       <div className=" pr-4 overflow-x-hidden flex-between flex-col lg:flex-row">
-        <div className=" flex items-center justify-center flex-col ml-4 lg:ml-20 lg:items-start lg:justify-start">
+        <div className=" w-full lg:w-[38%] flex items-center justify-center flex-col ml-4 lg:ml-20 lg:items-start lg:justify-start">
           <h1 className="text-5xl my-12 font-bold space-x-2">{heading}</h1>
           <p className="text-2xl space-x-6 mb-8">{paragraph}</p>
           <div className="flex-between">
@@ -17,7 +17,7 @@ function HeroSection({ heading, paragraph, btn1, btn2, img }) {
             </button>
           </div>
         </div>
-        <img src={img} alt="" className="w-full lg:w-[50vw] mt-10" />
+        <img src={img} alt="" className=" mt-10" />
       </div>
     </>
   );
