@@ -11,8 +11,10 @@ import { FiMonitor } from "react-icons/fi";
 import { RiWirelessChargingFill } from "react-icons/ri";
 import { BsTelephoneForward } from "react-icons/bs";
 import { MdOutlineTouchApp } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import Plans from "../components/Plans";
 function ProductDeatils() {
+  const navigate = useNavigate();
   return (
     <div className="overflow-x-hidden">
       <Navbar />
@@ -25,6 +27,8 @@ function ProductDeatils() {
         btn1={"Talk to an expert"}
         btn2={"Plans & Pricing"}
         img={groupcall}
+        redirect2={"plans"}
+        redirect1={"call"}
       />
       {/* Next Section */}
       <div className="my-40 flex flex-col gap-y-32">
@@ -129,7 +133,7 @@ function ProductDeatils() {
         <div className="flex flex-col items-center gap-4 w-[80%]">
           <h1 className="text-3xl font-medium text-center">Contact Us</h1>
           <p className="text-xl text-center">Have questions about Zoom Rooms or Spaces? Interested in a demo or free trial? Feel free to contact our sales team by filling out and submitting this form.</p>
-          <button className="capitalize text-white bg-primary rounded-full w-[300px] text-xl p-4 ">contact our sales team</button>
+          <button onClick={()=>{navigate("/custom")}} className="capitalize text-white bg-primary rounded-full w-[300px] text-xl p-4 ">contact our sales team</button>
           </div>
           </div>
           </div>

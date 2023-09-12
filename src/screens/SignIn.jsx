@@ -17,7 +17,7 @@ const SignIn = () => {
           </p>
         </div>
 
-        <form action="/home" className="flex flex-col ">
+        <form action="/" className="flex flex-col ">
           <InputField
             label={"Email"}
             type={"text"}
@@ -59,7 +59,7 @@ const SignIn = () => {
           </div>
           <div className="flex-center mt-4">
             <p>Don’t have an account?</p>
-            <Link to="/login" className="text-primary ml-2">
+            <Link to="/signup" className="text-primary ml-2">
               Signup
             </Link>
           </div>

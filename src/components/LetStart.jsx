@@ -1,14 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function LetStart() {
+  const navigate = useNavigate()
   return (
     <div className="my-10 bg-white flex-center">
       <div className="w-full bg-[#D8E0EF] lg:w-[80%] px-2 py-20 rounded-xl flex flex-col items-center justify-center">
         <div className="flex flex-col gap-4 lg:flex-row">
-          <button className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 hover:bg-primary hover:text-white">
+          <button onClick={()=>{navigate("details")}} className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 hover:bg-primary hover:text-white">
             Get Started
           </button>
-          <button className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 ml-4  hover:bg-primary hover:text-white">
+          <button onClick={()=>{navigate("plans")}} className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 ml-4  hover:bg-primary hover:text-white">
             Plans & Pricing
           </button>
         </div>
@@ -24,7 +26,7 @@ function LetStart() {
         </div>
         <div className="flex flex-col lg:flex-row bg-white p-2 rounded-3xl">
           <input type="text" name="" id="" placeholder="Enter your email address" className="p-6 focus:outline-none"/>
-          <button className="bg-primary border-2  text-white text-xl rounded-full p-4">
+          <button onClick={()=>{navigate("plans")}} className="bg-primary border-2  text-white text-xl rounded-full p-4">
             Subscribe Now
           </button>
         </div>

@@ -41,22 +41,22 @@ function HamburgerNav() {
             </Link>
           </li>
           <li>
-            <NavLink to="/about">About Us</NavLink>
+            <NavLink to="/details">About Us</NavLink>
           </li>
           <li className="text-white text-xl">
-            <NavLink to="/products">Products</NavLink>
+            <NavLink to="/plans">Products</NavLink>
           </li>
           <li>
-            <NavLink to="/solutions">Solutions</NavLink>
+            <NavLink to="/custom">Solutions</NavLink>
           </li>
           <li>
-            <NavLink to="/resources">Resources</NavLink>
+            <NavLink to="/details">Resources</NavLink>
           </li>
           <li>
-            <NavLink to="/plan">Plan & Pricing</NavLink>
+            <NavLink to="/plans">Plan & Pricing</NavLink>
           </li>
           <li className="hidden text-primary lg:block">
-            <NavLink to="/overseas">Contact Sales</NavLink>
+            <NavLink to="/custom">Contact Sales</NavLink>
           </li>
           <li>
             <Link
