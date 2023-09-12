@@ -1,25 +1,24 @@
 import React from "react";
 import '../index.css'
 import checkCircle from '../assets/check-circle.png'
-function Plans() {
+function Plans({planName,price,info,time}) {
   return (
-    <div className=" shadow-custom my-6 rounded-lg">
-      <div className="p-36">
-        <p className="capitalize text-xl">meeting one time plan</p>
+    <div className=" shadow-custom my-6 px-4 py-20 rounded-lg">
+      <div className="width-[40vw] flex-center gap-4 flex-col">
+        <p className="capitalize text-xl">{planName}</p>
         <div  className="flex items-end gap-2">
-          <h1 className="font-bold text-5xl">$05</h1>
-          <p>one time</p>
+          <h1 className="font-bold text-5xl">{price}</h1>
+          <p>{time}</p>
         </div>
-        <p>Basic features for up to 10 users. </p>
+        <p>{info} </p>
       </div>
       <div className="flex flex-col items-center w-full">
 
-      <button className="my-2 py-4 w-[80%] text-xl text-white bg-primary rounded-lg">Get Started</button>
+      <button className="my-2 py-4 w-[80%] text-xl text-white bg-[#4D87E2] rounded-lg">Get Started</button>
       <button className="mb-20 py-4 w-[80%] text-xl text-black border-2 border-gray-200 rounded-lg">Chat to Sale</button>
       </div>
     <div className="features px-10 py-16">
-        <h1 className="uppercase text-2xl">features</h1>
-        <p>Everything in our free plan plus....</p>
+        <h1 className="uppercase text-xl">features</h1>
     <ul>
         <li className="flex items-center gap-2">
             <img src={checkCircle} alt="" />

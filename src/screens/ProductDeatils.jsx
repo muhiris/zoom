@@ -117,8 +117,9 @@ function ProductDeatils() {
         Get Started With Zoom Rooms Plans
       </h1>
       <div className="flex items-center justify-around flex-wrap">
-        <Plans />
-        <Plans />
+      <Plans planName={"meeting one time plan"} price={"$5"} info={"Basic features for up to 10 users."} time={"one time"}  />
+      <Plans planName={"meeting enterprise plan"} price={"$20"} info={"Growing teams up to 20 users."} time={"per month"}  />
+          
       </div>
       {/* Next Section */}
       <Testimonial show={true} img={groupcall1} h={"Interested in providing premium home office setups?"} p={"Leverage Zoom Meeting licenses (free or paid) and Zoom for Home devices to deploy a conference room experience at home."} />
