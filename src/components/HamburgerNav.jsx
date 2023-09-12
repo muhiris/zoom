@@ -61,7 +61,7 @@ function HamburgerNav() {
           <li>
             <Link
               to="/signup"
-              className=" p-3 px-5 border-2 border-primary text-primary rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
+              className="  p-3 px-5 border-2 border-primary text-primary rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
             >
               SignUp for Free
             </Link>

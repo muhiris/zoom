@@ -7,10 +7,10 @@ function LetStart() {
     <div className="my-10 bg-white flex-center">
       <div className="w-full bg-[#D8E0EF] lg:w-[80%] px-2 py-20 rounded-xl flex flex-col items-center justify-center">
         <div className="flex flex-col gap-4 lg:flex-row">
-          <button onClick={()=>{navigate("details")}} className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 hover:bg-primary hover:text-white">
+          <button onClick={()=>{navigate("details")}} className="bg-transparent border-2 border-primary text-primary text-xl w-64 rounded-full py-3 hover:bg-primary hover:text-white">
             Get Started
           </button>
-          <button onClick={()=>{navigate("plans")}} className="bg-transparent border-2 border-primary text-primary text-xl  rounded-full p-4 ml-4  hover:bg-primary hover:text-white">
+          <button onClick={()=>{navigate("plans")}} className="bg-transparent border-2 border-primary text-primary text-xl w-64 rounded-full py-3  hover:bg-primary hover:text-white">
             Plans & Pricing
           </button>
         </div>

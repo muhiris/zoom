@@ -21,7 +21,7 @@ function Pricing() {
         </p>
       </div>
       <div className="flex mb-6 mt-10 flex-center ">
-      <div className="bg-[#F9FAFB] py-3 rounded-lg w-[70%] lg:w-[50%] flex-center gap-4">
+      <div className="bg-[#F9FAFB] py-3 rounded-lg w-full lg:w-[50%] flex-center gap-4">
           <button onClick={()=>{navigate("/plans")}} className="text-xl text-[#667085] p-3 hover:shadow-md hover:bg-white hover:text-black rounded-lg transition-all ease-in-out">
             Monthly Billing
           </button>
@@ -67,7 +67,7 @@ function Pricing() {
       <div className="flex gap-4 flex-col items-center justify-center">
         <img src={avatar} alt="" />
         <h1 className="text-2xl font-medium">Still Have Questions?</h1>
-        <p className="text-xl mb-4">
+        <p className="text-xl mb-4 text-center">
           Can’t find the answer you’re looking for? Please chat to our friendly
           team.
         </p>

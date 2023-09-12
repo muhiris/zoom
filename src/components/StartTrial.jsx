@@ -11,7 +11,7 @@ function StartTrial() {
           Join over 4,000+ startups already growing with Untitled.
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="mt-4 flex gap-2">
         <button onClick={()=>{navigate("/")}} className="px-4 py-4  text-xl text-white bg-[#4D87E2] rounded-lg">
           Get Started
         </button>
