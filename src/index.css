@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,6 +34,9 @@ body {
   justify-content: space-around;
 }
 
+.shadow-custom {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4); /* You can customize these values */
+}
 @media screen and (max-width: 768px) {
   html{
     font-size: 80%;

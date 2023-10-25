@@ -13,6 +13,7 @@ import { AiOutlinePlus,AiOutlineTag } from "react-icons/ai";
 import {SlMicrophone,SlSocialDropbox} from "react-icons/sl";
 import {TbMoneybag} from "react-icons/tb";
 import {PiBankLight} from "react-icons/pi";
+import { useNavigate } from "react-router-dom";
 import {
   SiSemanticscholar,
   SiWorldhealthorganization,
@@ -24,6 +25,7 @@ import LetStart from "../components/LetStart";
 import Footer from "../components/Footer";
 
 function Home() {
+  const navigate = useNavigate();
   const categories = [
     { icon: <SiSemanticscholar className="text-4xl"/>, text: "Education" },
     { icon: <TbMoneybag className="text-4xl"/>, text: "Financial Service" },
@@ -59,6 +61,8 @@ function Home() {
         }
         btn1={"Create Meeting"}
         btn2={"Enter Code"}
+        redirect1={"call"}
+        redirect2={"call"}
         img={homeHero}
       />
       <div className="flex-center w-full">
@@ -103,7 +107,7 @@ function Home() {
           }
         />
       </div>
-      <h1 className=" font-medium text-4xl my-40 m-auto w-[70%]">
+      <h1 className=" font-medium text-3xl text-center my-40 m-auto w-full lg:text-4xl lg:w-[70%]">
         One central place for easy collaboration, a seamless workflow, and
         visibility across all users and flows.
       </h1>
@@ -117,7 +121,7 @@ function Home() {
             collaborate better together in the boardroom, classroom, operating
             room, and everywhere in between.
           </p>
-          <button className="m-auto flex-between gap-2 bg-primary text-white border-2 px-4 py-3 lg:m-2 rounded-2xl">
+          <button onClick={()=>{navigate("plans")}} className="flex-between mx-auto gap-2 bg-primary text-white border-2 px-4 py-3 lg:m-2 rounded-2xl">
             <AiOutlinePlus />
             <p className="text-xl">Explore Industry Solutions</p>
           </button>
