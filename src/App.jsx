@@ -6,9 +6,11 @@ import SignUp from "./screens/SignUp";
 import Pricing from "./screens/Pricing";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CustomPlan from "./screens/CustomPlan";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 export default function App() {
   return (
-    <BrowserRouter>
+    <div>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/custom" element={<CustomPlan />} />
@@ -18,6 +20,7 @@ export default function App() {
         <Route path="/call" element={<Call />} />
         <Route path="/plans" element={<Pricing />} />
       </Routes>
-    </BrowserRouter>
+      <ToastContainer />
+    </div>
   );
 }
