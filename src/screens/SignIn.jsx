@@ -31,7 +31,7 @@ const SignIn = () => {
       if(userLogin.fulfilled.match(res)){
         console.log(res);
         toast.success("Login Successfull");
-        navigate("/home");
+        navigate("/");
       }
     })
   }catch(err){
@@ -51,7 +51,7 @@ const SignIn = () => {
           </p>
         </div>
 
-        <form onSubmit={handleLocalSignIn} className="flex flex-col  w-full   ">
+        <form onSubmit={handleLocalSignIn} className="flex flex-col w-full">
           <InputField
             label={"Email"}
             name={"email"}

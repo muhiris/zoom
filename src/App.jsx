@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CustomPlan from "./screens/CustomPlan";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import JoinCall from "./screens/joinCall";
 export default function App() {
   return (
     <div>
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/call" element={<Call />} />
+        <Route path="/joinCall" element={<JoinCall />} />
         <Route path="/plans" element={<Pricing />} />
       </Routes>
       <ToastContainer />

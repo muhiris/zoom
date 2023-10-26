@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import homeHero from "../assets/homeHero.png";
 import HeroSection from "../components/HeroSection";
@@ -23,9 +23,22 @@ import {
 } from "react-icons/si";
 import LetStart from "../components/LetStart";
 import Footer from "../components/Footer";
+import { useDispatch, useSelector } from "react-redux";
+import { socket } from '../socket/socket'
+import { addChat, addMessage } from "../redux/slice/chat/chatSlice";
+import { getAllChat } from "../redux/slice/chat/chatAction";
+import { toast } from "react-toastify";
+import { getAllSchedule } from "../redux/slice/schedule/scheduleAction";
+
 
 function Home() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  let { loading: UserInfoLoading, userInfo } = useSelector(state => state.user);
+  let { loading: meetLoading, meet, error: meetError } = useSelector(state => state.meet);
+  let {loading:scheduleLoading,schedules,error:scheduleError} = useSelector(state=>state.schedule);
+  const { loading: chatsLoading, chats, error: chatsError, hasNextPage:chatsHasNextPage } = useSelector(state => state.chat);
+  
   const categories = [
     { icon: <SiSemanticscholar className="text-4xl"/>, text: "Education" },
     { icon: <TbMoneybag className="text-4xl"/>, text: "Financial Service" },
@@ -51,6 +64,60 @@ function Home() {
       p: "HD is a must to enhance immersion and boost employee engagement. They expect to",
     },
   ];
+
+
+  useEffect(() => {
+
+    socket.connect();
+
+    socket.on('connect', () => {
+        socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
+    });
+
+    socket.on("message", ({data,chatId}) => {
+        console.log("message received: ", data);
+        dispatch(addMessage({ data: { messageData: data, chatId } }))
+    });
+
+    if (chats.length <= 0 && !chatsLoading) {
+        dispatch(getAllChat({ limit: 30 }));
+    }
+
+    socket.on("chatCreated",({chat,err})=>{
+        dispatch(addChat({data:{chatData:chat}}))
+        if(err){
+            toast.error(err);
+            // showMessage({
+            //     message: err,
+            //     type: "danger",
+            // });
+        }
+        else{
+            socket.emit('joinChat',{chatId:chat._id});
+            // showMessage({
+            //     message: "Chat Created Successfully",
+            //     type: "success",
+            // })
+            toast.success("Chat Created Successfully");
+        }
+    })
+
+    return () => {
+        socket.off('connect');
+        socket.off("message");
+        socket.off("chatCreated");
+        socket.disconnect();
+    }
+
+}, [])
+
+useEffect(() => {
+    if(schedules.lenght==0 && !scheduleLoading){
+        dispatch(getAllSchedule({filter:{status:{$ne:"pending"}},limit:5}));
+    }
+}, [])
+
+
   return (
     <div className="overflow-x-hidden ">
       <Navbar />
@@ -62,7 +129,7 @@ function Home() {
         btn1={"Create Meeting"}
         btn2={"Enter Code"}
         redirect1={"call"}
-        redirect2={"call"}
+        redirect2={"joinCall"}
         img={homeHero}
       />
       <div className="flex-center w-full">

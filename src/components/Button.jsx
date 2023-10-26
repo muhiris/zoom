@@ -13,7 +13,7 @@ function Button({disabled=false,...props}) {
       onClick={handleClick}
       style={props.style}
       disabled={props.loading || disabled}
-      className="flex justify-center items-center bg-primary text-white px-4 py-2 rounded-md cursor-pointer"
+      className={props.className || "flex justify-center items-center bg-primary text-white px-4 py-2 rounded-md cursor-pointer"}
     >
       {!props.loading ? props.text : 
       <div className="flex justify-center items-center">

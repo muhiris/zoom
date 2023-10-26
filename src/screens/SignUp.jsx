@@ -6,9 +6,37 @@ import section from "../assets/Section.png";
 import InputField from "../components/InputField";
 
 import "../index.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Button from "../components/Button";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../redux/slice/user/userAction";
+import { toast } from "react-toastify";
 //functional component
 const SignUp = () => {
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const {loading:authLoading, userInfo, error:authError} = useSelector(state => state.user);
+
+
+  const handleLocalSignUp = (e) => {
+    e.preventDefault();
+    const payload = {
+      email: e.target.email.value,
+      password: e.target.password.value,
+      name: e.target.name.value,
+    }
+
+    dispatch(registerUser(payload)).then((res)=>{
+      if(registerUser.fulfilled.match(res)){
+        toast.success("Registration Successfull");
+        navigate("/");
+      }
+    })
+
+  }
+
+
   return (
     <div className="overflow-hidden h-[100vh] flex items-center justify-center lg:justify-between">
       <div className="flex-start flex-col lg:ml-40   lg:min-w-[30%] ">
@@ -16,32 +44,36 @@ const SignUp = () => {
           <h1 className="text-4xl font-medium text-gray-900 mb-4">Sign Up</h1>
         </div>
 
-        <form action="/login" className="flex flex-col  w-full ">
+        <form onSubmit={handleLocalSignUp} className="flex flex-col  w-full ">
           <InputField
             label={"Name*"}
             type={"text"}
             placeholder={"Enter Name"}
-            id={"email"}
+            id={"name"}
+            name={"name"}
           />
           <InputField
             label={"Email*"}
             type={"text"}
             placeholder={"Enter Email"}
             id={"email"}
+            name={"email"}
           />
           <InputField
             label={"Password*"}
             type={"password"}
             placeholder={"Enter Password"}
             id={"password"}
+            name={"password"}
           />
 
-          <input
+          {/* <input
             type="submit"
             id="button"
             value="Sign In"
             className="mt-6 bg-primary text-white px-4 py-2 rounded-md"
-          />
+          /> */}
+          <Button text={"Sign Up"} type={"Submit"} loading={authLoading} style={{marginTop:24}} />
           <div className="flex-center mt-4 border  border-gray-300 rounded-md">
             <img src={google} alt="" />
             <input
