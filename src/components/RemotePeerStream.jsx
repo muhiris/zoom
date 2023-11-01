@@ -1,18 +1,18 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { ThreeCircles } from 'react-loader-spinner'
 
 function RemotePeerStream(props) {
 
     useEffect(() => {
-        if(props.src){
-            document.getElementById(`remotePeer-${props.userId}`).srcObject = props.src;
-            document.getElementById(`remotePeer-${props.userId}`).style.transform = 'scaleX(-1)';
+        if(props?.src){
+            document.getElementById(`remotePeer-${props?.userId}`).srcObject = props?.src;
+            // document.getElementById(`remotePeer-${props?.userId}`).style.transform = 'scaleX(-1)';
         }
-    }, [props.src])
+    }, [props?.src])
 
     return (
-        <div className='flex flex-1 relative'>
-            <video id={`remotePeer-${props.userId}`} autoPlay className='w-full h-full object-cover' />
+        <div className='flex flex-1 relative w-[150px] max-w-[150px] h-full '>
+            <video id={`remotePeer-${props.userId}`} autoPlay className='w-[150px] max-w-[150px] object-contain bg-black' />
             {
                 props.name &&
                 <p className='absolute bottom-0 left-0 right-0 text-white text-lg text-center bg-black bg-opacity-50'>{props.name}</p>

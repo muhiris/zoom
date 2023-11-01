@@ -24,9 +24,25 @@ const authSlice = createSlice({
     logout: state => {
       remove("accessToken");
       remove("refreshToken");
+      remove("user");
       state.userInfo = {};
       state.loading = false;
       state.error = null;
+      state.accessToken = null;
+      window.location.href = "/"; // redirect to Home page
+    },
+    setCredentials: (state, { payload }) => {
+      if (payload.accessToken) {
+        console.log("setCredentialsAfterGoogle");
+        state.userInfo = JSON.parse(payload.user);
+        state.accessToken = payload.accessToken;
+        localStorage.setItem("accessToken", payload.accessToken);
+        localStorage.setItem("refreshToken", payload.refreshToken);
+        localStorage.setItem("user", payload.user);
+      } else {
+        console.log("setCredentials");
+        state.userInfo = payload.data;
+      }
     },
   },
   extraReducers: builder => {
@@ -114,6 +130,6 @@ const authSlice = createSlice({
   },
 });
 
-export const {logout} = authSlice.actions;
+export const {logout, setCredentials} = authSlice.actions;
 
 export default authSlice.reducer;

@@ -9,7 +9,30 @@ import CustomPlan from "./screens/CustomPlan";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import JoinCall from "./screens/joinCall";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "./redux/slice/user/userSlice";
+
 export default function App() {
+
+  const dispatch = useDispatch();
+
+  //to get usrer credentials after each refresh
+  useEffect(() => {
+
+    try {
+      if (!localStorage.getItem("accessToken")) return;
+      const loggedInUser = localStorage.getItem("user");
+      if (loggedInUser && loggedInUser !== "undefined" && loggedInUser !== null && typeof loggedInUser === "string") {
+        const foundUser = JSON.parse(loggedInUser);
+        dispatch(setCredentials({ data: foundUser }))
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
+
   return (
     <div>
       <Routes>

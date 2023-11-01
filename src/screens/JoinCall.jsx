@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { joinMeet } from '../redux/slice/meet/meetAction';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const JoinCall = () => {
 
@@ -41,7 +42,6 @@ const JoinCall = () => {
             else {
                 setCamera(true);
             }
-            console.log(mediaStream);
             setLocalMediaStream(mediaStream);
         } catch (err) {
             console.log(err);
@@ -53,7 +53,7 @@ const JoinCall = () => {
         localMediaStream?.getTracks()?.forEach(
             track => track.stop()
         );
-
+    
         setLocalMediaStream(null);
     }
 
@@ -80,7 +80,7 @@ const JoinCall = () => {
             setMicrophone(!microphone);
         } catch (err) {
             console.log(err);
-        };
+        }
     }
 
 
@@ -99,10 +99,7 @@ const JoinCall = () => {
                 if (res.payload.data.access) {
                     navigate('/call', { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value } });
                 } else {
-                    showMessage({
-                        message: "Error",
-                        description: "Something went wrong!",
-                    })
+                    toast.error('You are not allowed to join this meeting');
                 }
             }
         })
@@ -111,26 +108,24 @@ const JoinCall = () => {
 
     useEffect(() => {
         startLocalMediaStram();
-        const handlePopState = () => {
+        window.addEventListener('beforeunload', () => {
+            // This function will run when the page is being unloaded (e.g., when reloading or navigating away).
             destroyingMediaStream();
-        };
+          });
 
-        document.addEventListener('popstate', handlePopState);
+        // document.addEventListener('popstate', handlePopState);
         return () => {
             destroyingMediaStream();
-            document.removeEventListener('popstate', handlePopState);
+            window.removeEventListener('beforeunload', () => {
+                // Remove the beforeunload event listener when the component is unmounted.
+            });
             
         }
     }, [])
 
 
-
-
-
-
-
     return (
-        <div className='flex flex-1 flex-row  gap-10 p-20'>
+        <div className='flex flex-1 flex-col md:flex-row  gap-10 p-20'>
             <div>
                 <MyStreamView style={{flex:1}} joinCallScreen={true} src={localMediaStream} microphone={microphone} toggleMicrophone={toggleActiveMicrophone} toggleCamera={toggleCamera} camera={camera} />
             </div>

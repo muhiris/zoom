@@ -6,7 +6,7 @@ import { get, save } from "../redux/reuseable";
 // export const baseUrl = "https://zoombackend-production.up.railway.app";
 // export const baseUrl = "http://192.168.1.173:5000";
 // export const baseUrl = "http://192.168.1.173:5000";
-export const baseUrl = "http://192.168.1.189:5000";
+export const baseUrl = "http://172.19.112.1:5000";
 
 
 // Create axiosInstance with default configuration

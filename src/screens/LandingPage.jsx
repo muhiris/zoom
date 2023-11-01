@@ -9,10 +9,10 @@ import testimo2 from "../assets/testimo2.png";
 import testimo3 from "../assets/testimo3.png";
 import GridCompaniesName from "../components/GridCompaniesName";
 import Testimonial from "../components/Testimonial";
-import { AiOutlinePlus,AiOutlineTag } from "react-icons/ai";
-import {SlMicrophone,SlSocialDropbox} from "react-icons/sl";
-import {TbMoneybag} from "react-icons/tb";
-import {PiBankLight} from "react-icons/pi";
+import { AiOutlinePlus, AiOutlineTag } from "react-icons/ai";
+import { SlMicrophone, SlSocialDropbox } from "react-icons/sl";
+import { TbMoneybag } from "react-icons/tb";
+import { PiBankLight } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
 import {
   SiSemanticscholar,
@@ -24,28 +24,29 @@ import {
 import LetStart from "../components/LetStart";
 import Footer from "../components/Footer";
 import { useDispatch, useSelector } from "react-redux";
-import { socket } from '../socket/socket'
 import { addChat, addMessage } from "../redux/slice/chat/chatSlice";
 import { getAllChat } from "../redux/slice/chat/chatAction";
 import { toast } from "react-toastify";
 import { getAllSchedule } from "../redux/slice/schedule/scheduleAction";
+import { useSocket } from "../context/socketContext";
 
 
 function Home() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const socket = useSocket();
   let { loading: UserInfoLoading, userInfo } = useSelector(state => state.user);
   let { loading: meetLoading, meet, error: meetError } = useSelector(state => state.meet);
-  let {loading:scheduleLoading,schedules,error:scheduleError} = useSelector(state=>state.schedule);
-  const { loading: chatsLoading, chats, error: chatsError, hasNextPage:chatsHasNextPage } = useSelector(state => state.chat);
-  
+  let { loading: scheduleLoading, schedules, error: scheduleError } = useSelector(state => state.schedule);
+  const { loading: chatsLoading, chats, error: chatsError, hasNextPage: chatsHasNextPage } = useSelector(state => state.chat);
+
   const categories = [
-    { icon: <SiSemanticscholar className="text-4xl"/>, text: "Education" },
-    { icon: <TbMoneybag className="text-4xl"/>, text: "Financial Service" },
-    { icon: <PiBankLight className="text-4xl"/>, text: "Government" },
-    { icon: <SiWorldhealthorganization className="text-4xl"/>, text: "Healthcare" },
-    { icon: <SlSocialDropbox className="text-4xl"/>, text: "Manufacturing" },
-    { icon: <AiOutlineTag className="text-4xl"/>, text: "Retail" },
+    { icon: <SiSemanticscholar className="text-4xl" />, text: "Education" },
+    { icon: <TbMoneybag className="text-4xl" />, text: "Financial Service" },
+    { icon: <PiBankLight className="text-4xl" />, text: "Government" },
+    { icon: <SiWorldhealthorganization className="text-4xl" />, text: "Healthcare" },
+    { icon: <SlSocialDropbox className="text-4xl" />, text: "Manufacturing" },
+    { icon: <AiOutlineTag className="text-4xl" />, text: "Retail" },
   ];
   const systemFunctions = [
     {
@@ -65,57 +66,55 @@ function Home() {
     },
   ];
 
-
+  // Socket Listeners =====================================
   useEffect(() => {
 
-    socket.connect();
-
-    socket.on('connect', () => {
+    if (socket && userInfo?._id) {
+      socket.on('connect', () => {
         socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
-    });
+      });
 
-    socket.on("message", ({data,chatId}) => {
+      socket.on("message", ({ data, chatId }) => {
         console.log("message received: ", data);
         dispatch(addMessage({ data: { messageData: data, chatId } }))
-    });
+      });
 
-    if (chats.length <= 0 && !chatsLoading) {
-        dispatch(getAllChat({ limit: 30 }));
+
+      socket.on("chatCreated", ({ chat, err }) => {
+        dispatch(addChat({ data: { chatData: chat } }))
+        if (err) {
+          toast.error(err);
+        }
+        else {
+          socket.emit('joinChat', { chatId: chat._id });
+          toast.success("Chat Created Successfully");
+        }
+      })
     }
 
-    socket.on("chatCreated",({chat,err})=>{
-        dispatch(addChat({data:{chatData:chat}}))
-        if(err){
-            toast.error(err);
-            // showMessage({
-            //     message: err,
-            //     type: "danger",
-            // });
-        }
-        else{
-            socket.emit('joinChat',{chatId:chat._id});
-            // showMessage({
-            //     message: "Chat Created Successfully",
-            //     type: "success",
-            // })
-            toast.success("Chat Created Successfully");
-        }
-    })
-
     return () => {
+      if (socket) {
         socket.off('connect');
         socket.off("message");
         socket.off("chatCreated");
-        socket.disconnect();
+      }
     }
 
-}, [])
+  }, [socket])
 
-useEffect(() => {
-    if(schedules.lenght==0 && !scheduleLoading){
-        dispatch(getAllSchedule({filter:{status:{$ne:"pending"}},limit:5}));
+  useEffect(() => {
+    if (userInfo?._id) {
+      
+      if (schedules.lenght == 0 && !scheduleLoading) {
+        dispatch(getAllSchedule({ filter: { status: { $ne: "pending" } }, limit: 5 }));
+      }
+
+      if (chats.length <= 0 && !chatsLoading) {
+        dispatch(getAllChat({ limit: 30 }));
+      }
     }
-}, [])
+
+  }, [])
 
 
   return (
@@ -188,7 +187,7 @@ useEffect(() => {
             collaborate better together in the boardroom, classroom, operating
             room, and everywhere in between.
           </p>
-          <button onClick={()=>{navigate("plans")}} className="flex-between mx-auto gap-2 bg-primary text-white border-2 px-4 py-3 lg:m-2 rounded-2xl">
+          <button onClick={() => { navigate("plans") }} className="flex-between mx-auto gap-2 bg-primary text-white border-2 px-4 py-3 lg:m-2 rounded-2xl">
             <AiOutlinePlus />
             <p className="text-xl">Explore Industry Solutions</p>
           </button>

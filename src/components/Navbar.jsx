@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import LogoWithText from "../assets/logowithtext.png";
 import HamburgerNav from "./HamburgerNav";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../redux/slice/user/userSlice"
+import { socket } from "../socket/socket";
 function Navbar() {
+
+  const dispatch = useDispatch();
+  const { userInfo } = useSelector(state => state.user);
+
   return (
     <div className="mobile:flex items-center justify-between">
       <nav className="flex items-center justify-between flex-wrap bg-white p-1 w-full md:p-6  ">
@@ -30,7 +37,7 @@ function Navbar() {
           <li className="hidden text-primary lg:block">
             <NavLink to="/custom">Contact Sales</NavLink>
           </li>
-          <li className="hidden lg:block">
+          {!userInfo?._id ? <li className="hidden lg:block">
             <Link
               to="/signup"
               className=" p-3 px-5 border-2 border-primary text-primary rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
@@ -38,6 +45,18 @@ function Navbar() {
               SignUp for Free
             </Link>
           </li>
+            :
+            <li onClick={() => {
+              socket.disconnect();
+              dispatch(logout())
+            }} className="hidden lg:block">
+              <div
+                className=" p-2 px-5 border-2 border-[red] text-[red] rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
+              >
+                Logout
+              </div>
+            </li>
+          }
           <HamburgerNav />
         </ul>
       </nav>

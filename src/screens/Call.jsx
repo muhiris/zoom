@@ -4,21 +4,23 @@ import Footer from "../components/Footer";
 import imgCall from "../assets/imgCall.png";
 import { useDispatch, useSelector } from "react-redux";
 import { usePeer } from '../context/peerContext';
-import { socket } from '../socket/socket'
 import { useLocation, useNavigate } from "react-router-dom";
 import MyStreamView from "../components/MyStreamView";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import RemotePeerStream from "../components/RemotePeerStream";
+import { useSocket } from "../context/socketContext";
 
 
 function Call() {
+
+  const socket = useSocket();
 
   // STATES
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   let { loading, error, userInfo, success } = useSelector((state) => state.user);
-  const {state} = useLocation();
+  const { state } = useLocation();
   const { meetId, name, video, audio } = state;
   const [sound, setSound] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(video);
@@ -45,8 +47,8 @@ function Call() {
       frameRate: 30,
       facingMode: facingMode,
       mediaSource: mediaSource,
-      width:{min:640,ideal:1280,max:1920},
-      height:{min:480,ideal:720,max:1080}
+      width: { min: 640, ideal: 1280, max: 1920 },
+      height: { min: 480, ideal: 720, max: 1080 }
     }
   };
 
@@ -194,7 +196,13 @@ function Call() {
       if (!isScreenSharing) {
         setIsCameraOn(false);
         setIsScreenSharing(true);
-        const mediaStream = await mediaDevices.getDisplayMedia();
+        
+        // display media with microphone audio
+        const mediaStream = await navigator.mediaDevices.getDisplayMedia();
+        // replace audio track in mediaStream with audio from microphone
+        // const audioTrack = localMediaStream.getAudioTracks()[0];
+        // mediaStream.addTrack(audioTrack);
+
         setLocalMediaStream(mediaStream);
         locaMediaRef.current = mediaStream;
         Object.keys(remotePeers.current).forEach((userId) => {
@@ -374,174 +382,178 @@ function Call() {
   //=========================================================================================================================================================//
   //================================================================== SOCKET LISTENERS =====================================================================//
   useEffect(() => {
-    socket.on("inform-others-about-me", async ({ otherUserId, name, socketId }) => {
-      try {
+    if (socket) {
+      socket.on("inform-others-about-me", async ({ otherUserId, name, socketId }) => {
+        try {
 
-        addPeerData(socketId, null, otherUserId, name, true);
-        //* SEND THE OFFER TO THE USER WHO JOINED THE MEET
-        setNewConnection(socketId, name, otherUserId);
+          addPeerData(socketId, null, otherUserId, name, true);
+          //* SEND THE OFFER TO THE USER WHO JOINED THE MEET
+          setNewConnection(socketId, name, otherUserId);
 
-      } catch (err) {
-        console.log(err);
-      }
-    })
-
-    socket.on('offer', async ({ offerDescription, socketId, name, userId }) => {
-      try {
-
-        //* CREATE A NEW CONNECTION WITH THE USER WHO SENT THE OFFER
-        if (!remotePeers.current[userId]) {
-          remotePeers.current[userId] = new RTCPeerConnection(peerConstraints);
-
-          //* EVENTS========================================
-
-          remotePeers.current[userId].ontrack = (event) => {
-            addPeerData(socketId, event.streams[0], userId, name, true);
-          }
-
-          //* Once the Offer is created and set as the local description, the icecandidate event is fired
-          remotePeers.current[userId].onicecandidate = (event) => {
-            if (!event.candidate) { return; };
-            socket.emit('ice-candidate', { iceCandidate: event.candidate, userId });
-          }
-
-          locaMediaRef.current.getTracks().forEach((track) => {
-            remotePeers.current[userId].addTrack(track, locaMediaRef.current);
-          });
-
-          remotePeers.current[userId]?.addEventListener('iceconnectionstatechange', (event) => {
-            if (remotePeers.current[userId]) {
-              if (remotePeers.current[userId].iceConnectionState === "connected" || remotePeers.current[userId].iceConnectionState === "completed") {
-                ChangeLoadingState(userId, false);
-              }
-              else if (remotePeers.current[userId].iceConnectionState === "failed") {
-                if (remotePeers.current[userId]) {
-                  remotePeers.current[userId].close();
-                  delete remotePeers.current[userId];
-                }
-                setNewConnection(peerData[userId]?.socketId || null, peerData[userId]?.name || "UNKNOW", userId);
-              }
-              else if (remotePeers.current[userId].iceConnectionState === "disconnected") {
-                console.log("USER DISCONNECTED")
-
-              } else if (remotePeers.current[userId].iceConnectionState === "closed") {
-                console.log("CONNECTION WITH USER CLOSED")
-              }
-            } else {
-              console.log("USER NOT FOUND")
-            }
-          });
-
+        } catch (err) {
+          console.log(err);
         }
-
-        if (remotePeers.current[userId].signalingState === 'stable') {
-          //* setting the remote description with the offerDescription (of the user who sent the offer)
-          remotePeers.current[userId].setRemoteDescription(new RTCSessionDescription(offerDescription)).then(
-            async () => {
-
-              // Check if there are buffered ICE candidates and add them
-              if (remotePeers?.current[userId]?.iceCandidateBuffer) {
-                for (const bufferedCandidate of remotePeers.current[userId].iceCandidateBuffer) {
-                  const iceCandidate = new RTCIceCandidate(bufferedCandidate);
-                  remotePeers.current[userId].addIceCandidate(iceCandidate)
-                    .then(() => {
-                      console.log("Buffered ICE CANDIDATE ADDED TO: ", socketId, " BY SocketId: ", socket.id, " ICE CANDIDATE: ");
-                    })
-                    .catch((err) => {
-                      console.log("Error in add buffered ice candidate: ", err);
-                    });
-                }
-                // Clear the buffered ICE candidates
-                remotePeers.current[userId].iceCandidateBuffer = [];
-              }
-
-
-              if (remotePeers.current[userId].signalingState === 'have-remote-offer') {
-                //* creating an answer for the offer (of the user who sent the offer)
-                let answer = await remotePeers.current[userId].createAnswer();
-
-                //* also setting the local description with the answer (of the user who sent the offer in RTCPeerConnection object stored on our side fo that user)
-                await remotePeers.current[userId].setLocalDescription(answer)
-                //* sending the answer to the user who sent the offer
-                socket.emit('answer', { answerDescription: answer, userId });
-              }
-            },
-            (err) => {
-              console.log("Error while creating offer ", err)
-            }
-          );
-        } else {
-          console.log("Signaling state is not stable. Current state:", remotePeers.current[userId].signalingState);
-        }
-      } catch (err) {
-        console.log("ERROR ON SOCKET OFFER: ", err);
-      }
-    });
-
-    socket.on('answer', async ({ answerDescription, userId }) => {
-      try {
-        if (remotePeers.current[userId].signalingState === "have-local-offer") {
-          //* setting the remote description with the answer (of the user who received the offer) as they sent the answer
-          await remotePeers.current[userId].setRemoteDescription(new RTCSessionDescription(answerDescription));
-          // Check if there are buffered ICE candidates and add them
-          if (remotePeers?.current[userId]?.iceCandidateBuffer) {
-            for (const bufferedCandidate of remotePeers.current[userId].iceCandidateBuffer) {
-              const iceCandidate = new RTCIceCandidate(bufferedCandidate);
-              remotePeers.current[userId].addIceCandidate(iceCandidate)
-                .then(() => {
-                  console.log("Buffered ICE CANDIDATE ADDED TO: ", userId, " BY SocketId: ", socket.id, " ICE CANDIDATE ");
-                })
-                .catch((err) => {
-                  console.log("Error in add buffered ice candidate: ", err);
-                });
-            }
-            // Clear the buffered ICE candidates
-            remotePeers.current[userId].iceCandidateBuffer = [];
-          }
-        }
-
-      } catch (err) {
-        console.log("ERROR on SOCKET ANSWER: ", err);
-      }
-    });
-
-
-    socket.on('ice-candidate', async ({ iceCandidate, userId }) => {
-      //* Add the received ICE candidate to the peer connection object of the user who sent the ICE candidate
-      let iceCandidateV = new RTCIceCandidate(iceCandidate);
-      if (!remotePeers.current[userId].remoteDescription) {
-
-        if (!remotePeers.current[userId].iceCandidateBuffer) {
-          remotePeers.current[userId].iceCandidateBuffer = [];
-        }
-        remotePeers.current[userId].iceCandidateBuffer.push(iceCandidateV);
-        return;
-
-      }
-      return remotePeers.current[userId].addIceCandidate(iceCandidateV).then(() => {
-
-      }, (err) => {
-        console.log("Error in add ice candidate: ", err);
       })
 
-    })
+      socket.on('offer', async ({ offerDescription, socketId, name, userId }) => {
+        try {
+
+          //* CREATE A NEW CONNECTION WITH THE USER WHO SENT THE OFFER
+          if (!remotePeers.current[userId]) {
+            remotePeers.current[userId] = new RTCPeerConnection(peerConstraints);
+
+            //* EVENTS========================================
+
+            remotePeers.current[userId].ontrack = (event) => {
+              addPeerData(socketId, event.streams[0], userId, name, true);
+            }
+
+            //* Once the Offer is created and set as the local description, the icecandidate event is fired
+            remotePeers.current[userId].onicecandidate = (event) => {
+              if (!event.candidate) { return; };
+              socket.emit('ice-candidate', { iceCandidate: event.candidate, userId });
+            }
+
+            locaMediaRef.current.getTracks().forEach((track) => {
+              remotePeers.current[userId].addTrack(track, locaMediaRef.current);
+            });
+
+            remotePeers.current[userId]?.addEventListener('iceconnectionstatechange', (event) => {
+              if (remotePeers.current[userId]) {
+                if (remotePeers.current[userId].iceConnectionState === "connected" || remotePeers.current[userId].iceConnectionState === "completed") {
+                  ChangeLoadingState(userId, false);
+                }
+                else if (remotePeers.current[userId].iceConnectionState === "failed") {
+                  if (remotePeers.current[userId]) {
+                    remotePeers.current[userId].close();
+                    delete remotePeers.current[userId];
+                  }
+                  setNewConnection(peerData[userId]?.socketId || null, peerData[userId]?.name || "UNKNOW", userId);
+                }
+                else if (remotePeers.current[userId].iceConnectionState === "disconnected") {
+                  console.log("USER DISCONNECTED")
+
+                } else if (remotePeers.current[userId].iceConnectionState === "closed") {
+                  console.log("CONNECTION WITH USER CLOSED")
+                }
+              } else {
+                console.log("USER NOT FOUND")
+              }
+            });
+
+          }
+
+          if (remotePeers.current[userId].signalingState === 'stable') {
+            //* setting the remote description with the offerDescription (of the user who sent the offer)
+            remotePeers.current[userId].setRemoteDescription(new RTCSessionDescription(offerDescription)).then(
+              async () => {
+
+                // Check if there are buffered ICE candidates and add them
+                if (remotePeers?.current[userId]?.iceCandidateBuffer) {
+                  for (const bufferedCandidate of remotePeers.current[userId].iceCandidateBuffer) {
+                    const iceCandidate = new RTCIceCandidate(bufferedCandidate);
+                    remotePeers.current[userId].addIceCandidate(iceCandidate)
+                      .then(() => {
+                        console.log("Buffered ICE CANDIDATE ADDED TO: ", socketId, " BY SocketId: ", socket.id, " ICE CANDIDATE: ");
+                      })
+                      .catch((err) => {
+                        console.log("Error in add buffered ice candidate: ", err);
+                      });
+                  }
+                  // Clear the buffered ICE candidates
+                  remotePeers.current[userId].iceCandidateBuffer = [];
+                }
 
 
-    socket.on("user-leave-room", ({ userId }) => {
-      try {
-        // Call the function to handle peer disconnection
-        handlePeerDisconnect(userId);
-      } catch (err) {
-        console.log("ERROR IN USER LEAVE ROOM: ", err);
-      }
-    });
+                if (remotePeers.current[userId].signalingState === 'have-remote-offer') {
+                  //* creating an answer for the offer (of the user who sent the offer)
+                  let answer = await remotePeers.current[userId].createAnswer();
+
+                  //* also setting the local description with the answer (of the user who sent the offer in RTCPeerConnection object stored on our side fo that user)
+                  await remotePeers.current[userId].setLocalDescription(answer)
+                  //* sending the answer to the user who sent the offer
+                  socket.emit('answer', { answerDescription: answer, userId });
+                }
+              },
+              (err) => {
+                console.log("Error while creating offer ", err)
+              }
+            );
+          } else {
+            console.log("Signaling state is not stable. Current state:", remotePeers.current[userId].signalingState);
+          }
+        } catch (err) {
+          console.log("ERROR ON SOCKET OFFER: ", err);
+        }
+      });
+
+      socket.on('answer', async ({ answerDescription, userId }) => {
+        try {
+          if (remotePeers.current[userId].signalingState === "have-local-offer") {
+            //* setting the remote description with the answer (of the user who received the offer) as they sent the answer
+            await remotePeers.current[userId].setRemoteDescription(new RTCSessionDescription(answerDescription));
+            // Check if there are buffered ICE candidates and add them
+            if (remotePeers?.current[userId]?.iceCandidateBuffer) {
+              for (const bufferedCandidate of remotePeers.current[userId].iceCandidateBuffer) {
+                const iceCandidate = new RTCIceCandidate(bufferedCandidate);
+                remotePeers.current[userId].addIceCandidate(iceCandidate)
+                  .then(() => {
+                    console.log("Buffered ICE CANDIDATE ADDED TO: ", userId, " BY SocketId: ", socket.id, " ICE CANDIDATE ");
+                  })
+                  .catch((err) => {
+                    console.log("Error in add buffered ice candidate: ", err);
+                  });
+              }
+              // Clear the buffered ICE candidates
+              remotePeers.current[userId].iceCandidateBuffer = [];
+            }
+          }
+
+        } catch (err) {
+          console.log("ERROR on SOCKET ANSWER: ", err);
+        }
+      });
+
+
+      socket.on('ice-candidate', async ({ iceCandidate, userId }) => {
+        //* Add the received ICE candidate to the peer connection object of the user who sent the ICE candidate
+        let iceCandidateV = new RTCIceCandidate(iceCandidate);
+        if (!remotePeers.current[userId].remoteDescription) {
+
+          if (!remotePeers.current[userId].iceCandidateBuffer) {
+            remotePeers.current[userId].iceCandidateBuffer = [];
+          }
+          remotePeers.current[userId].iceCandidateBuffer.push(iceCandidateV);
+          return;
+
+        }
+        return remotePeers.current[userId].addIceCandidate(iceCandidateV).then(() => {
+
+        }, (err) => {
+          console.log("Error in add ice candidate: ", err);
+        })
+
+      })
+
+
+      socket.on("user-leave-room", ({ userId }) => {
+        try {
+          // Call the function to handle peer disconnection
+          handlePeerDisconnect(userId);
+        } catch (err) {
+          console.log("ERROR IN USER LEAVE ROOM: ", err);
+        }
+      });
+    }
 
     return () => {
-      socket.off("inform-others-about-me");
-      socket.off("offer");
-      socket.off("answer");
-      socket.off("ice-candidate");
-      socket.off("user-leave-room");
+      if (socket) {
+        socket.off("inform-others-about-me");
+        socket.off("offer");
+        socket.off("answer");
+        socket.off("ice-candidate");
+        socket.off("user-leave-room");
+      }
 
     }
 
@@ -552,22 +564,24 @@ function Call() {
   //================================================================= USEEFFECT TO START THE LOCAL MEDIA STREAM =============================================//
   useEffect(() => {
 
-    if (location.pathname === "/call") {
+    if (location.pathname === "/call" && socket) {
       startLocalMediaStram().then(() => {
         socket.emit("join-room", { name, userId: userInfo._id, meetId });
       })
     }
 
     return () => {
-      socket.off("inform-others-about-me");
-      socket.off("offer");
-      socket.off("answer");
-      socket.off("ice-candidate");
-      socket.off("user-leave-room");
-      socket.off("join-room");
-      socket.off("leave-room");
+      if (socket) {
+        socket.off("inform-others-about-me");
+        socket.off("offer");
+        socket.off("answer");
+        socket.off("ice-candidate");
+        socket.off("user-leave-room");
+        socket.off("join-room");
+        socket.off("leave-room");
+      }
     }
-  }, [location.pathname]);
+  }, [location.pathname, socket]);
 
 
 
@@ -575,29 +589,32 @@ function Call() {
   // ======================================================================= RETURNS VIEW ====================================================================//
 
   return (
-    <>
-      <Navbar />
-      {/* <img src={imgCall} alt="" className="m-auto my-10" /> */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col h-screen max-h-screen ">
         {/* Participants Streams */}
-        <div ref={remotePeersViewRef} className="flex w-full items-center overflow-y-hidden">
-          <AiOutlineLeft className="text-3xl text-gray-500 cursor-pointer" onClick={()=>{
-            remotePeersViewRef.current.scrollLeft-=100;
+        <div ref={remotePeersViewRef} className="flex w-full items-center overflow-y-hidden  h-[150px] min-h-[150px]">
+          <AiOutlineLeft className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
+            remotePeersViewRef.current.scrollLeft -= 100;
           }} />
-          <div className="flex flex-1 items-center">
+          <div className="flex flex-1 items-center min-h-full h-full  ">
             {
               seePeerList.map((item) =>
-                <RemotePeerStream src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
+                <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
                   peerData[item]?.userId
                 } />
               )
             }
           </div>
-          <AiOutlineRight className="text-3xl text-gray-500 cursor-pointer" onClick={()=>{
-            remotePeersViewRef.current.scrollLeft-=100;
-          }}  />
+          <AiOutlineRight className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
+            remotePeersViewRef.current.scrollLeft -= 100;
+          }} />
         </div>
         {/* My Stream */}
+        <div
+        style={{
+          height: "calc(100% - 150px)",
+          maxHeight: "calc(100% - 150px)",
+        }}
+        className="flex flex-1 ">
         <MyStreamView
           src={localMediaStream}
           microphone={!isMuted}
@@ -609,9 +626,8 @@ function Call() {
           toggleParticipants={() => { }}
           endCall={handleEndCall}
         />
+        </div>
       </div>
-      <Footer />
-    </>
   );
 }
 

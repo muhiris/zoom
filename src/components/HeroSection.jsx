@@ -31,8 +31,8 @@ function HeroSection({ heading, paragraph, btn1, btn2, img,redirect1,redirect2 }
           <h1 className="text-5xl my-12 font-bold space-x-2">{heading}</h1>
           <p className="text-2xl space-x-6 mb-8">{paragraph}</p>
           <div className="flex-between">
-            <Button loading={meetLoading} text={btn1} onClick={handleButtonClick1} className="text-white px-6 py-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
-            <Button loading={meetLoading} text={btn2} onClick={handleButtonClick2} className="text-white px-6 py-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
+            <Button loading={meetLoading} text={btn1} onClick={handleButtonClick1} className="text-white px-6 py-4 mr-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
+            <Button disabled={meetLoading} text={btn2} onClick={handleButtonClick2} className="text-white px-6 py-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
 
             
           </div>
