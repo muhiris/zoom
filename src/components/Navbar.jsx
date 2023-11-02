@@ -4,39 +4,52 @@ import LogoWithText from "../assets/logowithtext.png";
 import HamburgerNav from "./HamburgerNav";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/slice/user/userSlice"
-import { socket } from "../socket/socket";
+import { useSocket } from "../context/socketContext";
 function Navbar() {
 
   const dispatch = useDispatch();
+  const socket = useSocket();
   const { userInfo } = useSelector(state => state.user);
 
   return (
     <div className="mobile:flex items-center justify-between">
       <nav className="flex items-center justify-between flex-wrap bg-white p-1 w-full md:p-6  ">
         <ul className="flex items-center justify-between w-full p-1 md:p-3">
-          <li>
-            <Link to={"/"}>
-              <img src={LogoWithText} alt="" style={{ width: "120px" }} />
-            </Link>
-          </li>
-          <li className="hidden lg:block">
-            <NavLink to="/details">About Us</NavLink>
-          </li>
-          <li className="hidden lg:block">
-            <NavLink to="/plans">Products</NavLink>
-          </li>
-          <li className="hidden lg:block">
-            <NavLink to="/custom">Solutions</NavLink>
-          </li>
-          <li className="hidden lg:block">
-            <NavLink to="/details">Resources</NavLink>
-          </li>
-          <li className="hidden lg:block">
-            <NavLink to="/plans">Plan & Pricing</NavLink>
-          </li>
-          <li className="hidden text-primary lg:block">
-            <NavLink to="/custom">Contact Sales</NavLink>
-          </li>
+          {!userInfo?._id ?
+            <><li>
+              <Link to={"/"}>
+                <img src={LogoWithText} alt="" style={{ width: "120px" }} />
+              </Link>
+            </li>
+              <li className="hidden lg:block">
+                <NavLink to="/details">About Us</NavLink>
+              </li>
+              <li className="hidden lg:block">
+                <NavLink to="/plans">Products</NavLink>
+              </li>
+              <li className="hidden lg:block">
+                <NavLink to="/custom">Solutions</NavLink>
+              </li>
+              <li className="hidden lg:block">
+                <NavLink to="/details">Resources</NavLink>
+              </li>
+              <li className="hidden lg:block">
+                <NavLink to="/plans">Plan & Pricing</NavLink>
+              </li>
+              <li className="hidden text-primary lg:block">
+                <NavLink to="/custom">Contact Sales</NavLink>
+              </li></>
+            :
+            <><li>
+              <Link to={"/"}>
+                <img src={LogoWithText} alt="" style={{ width: "120px" }} />
+              </Link>
+            </li>
+              <li className="hidden lg:block text-primary">
+                <NavLink to="/chat">Chats</NavLink>
+              </li>
+            </>
+          }
           {!userInfo?._id ? <li className="hidden lg:block">
             <Link
               to="/signup"
@@ -47,7 +60,9 @@ function Navbar() {
           </li>
             :
             <li onClick={() => {
-              socket.disconnect();
+              if (socket) {
+                socket.disconnect();
+              }
               dispatch(logout())
             }} className="hidden lg:block">
               <div

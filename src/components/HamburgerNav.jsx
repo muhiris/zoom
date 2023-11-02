@@ -2,9 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { HiMenu } from "react-icons/hi";
 import LogoWithText from "../assets/logowithtext.png";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../redux/slice/user/userSlice"
+import { useSocket } from "../context/socketContext";
 
 function HamburgerNav() {
+  
+  const dispatch = useDispatch();
+  const socket = useSocket();
+  const { userInfo } = useSelector(state => state.user);
   const [isOpen, setIsOpen] = useState(false);
+
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
@@ -58,14 +66,28 @@ function HamburgerNav() {
           <li className="hidden text-primary lg:block">
             <NavLink to="/custom">Contact Sales</NavLink>
           </li>
-          <li>
+          {!userInfo?._id ? <li className="lg:hidden">
             <Link
               to="/signup"
-              className="  p-3 px-5 border-2 border-primary text-primary rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
+              className=" p-3 px-5 border-2 border-primary text-primary rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
             >
               SignUp for Free
             </Link>
           </li>
+            :
+            <li onClick={() => {
+              if(socket){
+                socket.disconnect();
+              }
+              dispatch(logout())
+            }} className="lg:hidden">
+              <div
+                className=" p-2 px-5 border-2 border-[red] text-[red] rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"
+              >
+                Logout
+              </div>
+            </li>
+          }
         </ul>
       </aside>
     </div>

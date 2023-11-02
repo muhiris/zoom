@@ -13,19 +13,22 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }) {
-  const {userInfo} = useSelector(state => state.user);
   const [socketConnection, setSocketConnection] = useState(null);
+  const { userInfo } = useSelector(state => state.user);
 
   useEffect(() => {
-    if(!userInfo._id || socket.connected ) return;
+    console.log('SocketProvider: userInfo', userInfo);
+    if(!userInfo?._id || socket.connected ) return;
     console.log('SocketProvider: connecting...');
     const socketConnection = socket.connect();
     setSocketConnection(socketConnection);
 
     return () => {
-      socketConnection.disconnect();
+      if(socket.connected && userInfo?._id){
+        socketConnection.disconnect();
+      }
     };
-  }, [userInfo]);
+  }, [userInfo?._id]);
 
   return (
     <SocketContext.Provider value={socketConnection}>

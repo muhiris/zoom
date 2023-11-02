@@ -34,6 +34,7 @@ function Call() {
   const [seePeerList, setPeerList] = useState([]);
   let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
   const remotePeersViewRef = useRef();
+  const [sideBar, setSideBar] = useState(false);
 
 
 
@@ -99,7 +100,7 @@ function Call() {
   //========================================================================== LOCAL STREAM HANDLERS ========================================================//
 
   // START THE LOCAL MEDIA STREAM
-  const startLocalMediaStram = async () => {
+  const startLocalMediaStream = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       if (isVoiceOnly) {
@@ -196,7 +197,7 @@ function Call() {
       if (!isScreenSharing) {
         setIsCameraOn(false);
         setIsScreenSharing(true);
-        
+
         // display media with microphone audio
         const mediaStream = await navigator.mediaDevices.getDisplayMedia();
         // replace audio track in mediaStream with audio from microphone
@@ -213,7 +214,7 @@ function Call() {
       } else {
         setIsScreenSharing(false);
         setIsCameraOn(true);
-        await startLocalMediaStram();
+        await startLocalMediaStream();
         localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
         locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
         Object.keys(remotePeers.current).forEach((userId) => {
@@ -563,9 +564,9 @@ function Call() {
   //=========================================================================================================================================================//
   //================================================================= USEEFFECT TO START THE LOCAL MEDIA STREAM =============================================//
   useEffect(() => {
-
-    if (location.pathname === "/call" && socket) {
-      startLocalMediaStram().then(() => {
+    console.log("LOCATION PATHNAME: ", location.pathname.split('/')[1]);
+    if (location.pathname.split('/')[1] === "call" && socket) {
+      startLocalMediaStream().then(() => {
         socket.emit("join-room", { name, userId: userInfo._id, meetId });
       })
     }
@@ -581,7 +582,7 @@ function Call() {
         socket.off("leave-room");
       }
     }
-  }, [location.pathname, socket]);
+  }, [location.pathname]);
 
 
 
@@ -589,27 +590,27 @@ function Call() {
   // ======================================================================= RETURNS VIEW ====================================================================//
 
   return (
-      <div className="flex flex-1 flex-col h-screen max-h-screen ">
-        {/* Participants Streams */}
-        <div ref={remotePeersViewRef} className="flex w-full items-center overflow-y-hidden  h-[150px] min-h-[150px]">
-          <AiOutlineLeft className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
-            remotePeersViewRef.current.scrollLeft -= 100;
-          }} />
-          <div className="flex flex-1 items-center min-h-full h-full  ">
-            {
-              seePeerList.map((item) =>
-                <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
-                  peerData[item]?.userId
-                } />
-              )
-            }
-          </div>
-          <AiOutlineRight className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
-            remotePeersViewRef.current.scrollLeft -= 100;
-          }} />
+    <div className="flex flex-1 flex-col h-screen max-h-screen relative overflow-hidden">
+      {/* Participants Streams */}
+      <div ref={remotePeersViewRef} className="flex w-full items-center overflow-y-hidden  h-[150px] min-h-[150px]">
+        <AiOutlineLeft className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
+          remotePeersViewRef.current.scrollLeft -= 100;
+        }} />
+        <div className="flex flex-1 items-center min-h-full h-full  ">
+          {
+            seePeerList.map((item) =>
+              <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
+                peerData[item]?.userId
+              } />
+            )
+          }
         </div>
-        {/* My Stream */}
-        <div
+        <AiOutlineRight className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
+          remotePeersViewRef.current.scrollLeft -= 100;
+        }} />
+      </div>
+      {/* My Stream */}
+      <div
         style={{
           height: "calc(100% - 150px)",
           maxHeight: "calc(100% - 150px)",
@@ -617,17 +618,35 @@ function Call() {
         className="flex flex-1 ">
         <MyStreamView
           src={localMediaStream}
+          speaker={sound}
+          toggleSpeaker={handleSpeakerToggle}
           microphone={!isMuted}
           toggleMicrophone={toggleActiveMicrophone}
           camera={isCameraOn}
           toggleCamera={toggleCamera}
           screenShare={isScreenSharing}
           toggleScreenShare={toggleScreenCapture}
-          toggleParticipants={() => { }}
+          toggleParticipants={() => { setSideBar(!sideBar) }}
           endCall={handleEndCall}
         />
+      </div>
+      <div style={{
+        right: sideBar ? "0px" : "-100%",
+      }} className="w-[30%] z-50 h-screen max-h-screen flex flex-col absolute right-0 top-0 bottom-0 ease-in-out transition-all bg-white p-10">
+        <p className="text-lg font-bold text-center">Participants</p>
+        <div className="flex flex-1 gap-4">
+          {
+            seePeerList.map((item) =>
+              <div className="flex flex-row items-center justify-between">
+                <p className="text-md">{
+                  peerData[item]?.name
+                }</p>
+              </div>
+            )
+          }
         </div>
       </div>
+    </div>
   );
 }
 

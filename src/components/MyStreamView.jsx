@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { BsFillMicMuteFill, BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill,  BsPeopleFill } from 'react-icons/bs';
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
+import {GiSpeaker, GiSpeakerOff} from 'react-icons/gi';
 import Button from './Button';
 
 function MyStreamView(props) {
@@ -24,6 +25,13 @@ function MyStreamView(props) {
             <video style={props.videoStyle} id='myVideo'  autoPlay className='w-full h-full flex-1 object-contain bg-black' playsInline />
             <div className='flex-1  flex items-center justify-between absolute bottom-0 w-full'>
                 <div className='flex items-center gap-4 justify-center flex-1'>
+                    <div className='flex flex-col items-center'>
+                        {props.speaker ?
+                            <GiSpeaker className='text-white text-2xl' onClick={props.toggleSpeaker} />:
+                            <GiSpeakerOff className='text-white text-2xl' onClick={props.toggleSpeaker} /> 
+                        }
+                        <p className='text-lg text-white'>Speaker</p>
+                    </div>
                     <div className='flex flex-col items-center'>
                         {props.microphone ?
                             <BsMicFill className='text-white text-2xl' onClick={props.toggleMicrophone} />:

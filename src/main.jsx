@@ -10,7 +10,7 @@ import { SocketProvider } from "./context/socketContext.jsx";
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <BrowserRouter>
       <Provider store={store}>
         <SocketProvider>
@@ -20,5 +20,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </SocketProvider>
       </Provider>
     </BrowserRouter>
-  </React.StrictMode>,
+  // </React.StrictMode>,
 )

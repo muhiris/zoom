@@ -12,6 +12,7 @@ const JoinCall = () => {
     const [localMediaStream, setLocalMediaStream] = useState(null);
     const [camera, setCamera] = useState(true);
     const [microphone, setMicrophone] = useState(true);
+    const [sound, setSound] = useState(true);
     const isVoiceOnly = !camera;
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -83,6 +84,20 @@ const JoinCall = () => {
         }
     }
 
+    const handleSpeakerToggle = () => {
+        try {
+    
+          const audioTracks = localMediaStream.getAudioTracks();
+          if (audioTracks.length > 0) {
+            const audioTrack = audioTracks[0];
+            audioTrack.enabled = !audioTrack.enabled;
+          }
+          setSound(!sound);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
 
     const handleJoinMeeting = (e) => {
         e.preventDefault();
@@ -97,7 +112,7 @@ const JoinCall = () => {
         dispatch(joinMeet(payload)).then((res) => {
             if (joinMeet.fulfilled.match(res)) {
                 if (res.payload.data.access) {
-                    navigate('/call', { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value } });
+                    navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value } });
                 } else {
                     toast.error('You are not allowed to join this meeting');
                 }
@@ -127,7 +142,17 @@ const JoinCall = () => {
     return (
         <div className='flex flex-1 flex-col md:flex-row  gap-10 p-20'>
             <div>
-                <MyStreamView style={{flex:1}} joinCallScreen={true} src={localMediaStream} microphone={microphone} toggleMicrophone={toggleActiveMicrophone} toggleCamera={toggleCamera} camera={camera} />
+                <MyStreamView 
+                style={{flex:1}} 
+                joinCallScreen={true} 
+                src={localMediaStream} 
+                microphone={microphone} 
+                toggleMicrophone={toggleActiveMicrophone} 
+                toggleCamera={toggleCamera} 
+                camera={camera}
+                speaker={sound}
+                toggleSpeaker={handleSpeakerToggle}
+                />
             </div>
             <div className='flex flex-col py-5'>
                 <p className='text-3xl font-medium text-center'>Join Meeting</p>

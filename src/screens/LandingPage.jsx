@@ -35,9 +35,9 @@ function Home() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const socket = useSocket();
-  let { loading: UserInfoLoading, userInfo } = useSelector(state => state.user);
-  let { loading: meetLoading, meet, error: meetError } = useSelector(state => state.meet);
-  let { loading: scheduleLoading, schedules, error: scheduleError } = useSelector(state => state.schedule);
+  const { loading: UserInfoLoading, userInfo } = useSelector(state => state.user);
+  const { loading: meetLoading, meet, error: meetError } = useSelector(state => state.meet);
+  const { loading: scheduleLoading, schedules, error: scheduleError } = useSelector(state => state.schedule);
   const { loading: chatsLoading, chats, error: chatsError, hasNextPage: chatsHasNextPage } = useSelector(state => state.chat);
 
   const categories = [
@@ -66,55 +66,70 @@ function Home() {
     },
   ];
 
-  // Socket Listeners =====================================
-  useEffect(() => {
+  // // Socket Listeners =====================================
+  // useEffect(() => {
 
-    if (socket && userInfo?._id) {
-      socket.on('connect', () => {
-        socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
-      });
+  //   if (socket && userInfo?._id) {
+  //     socket.on('connect', () => {
+  //       socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
+  //     });
 
-      socket.on("message", ({ data, chatId }) => {
-        console.log("message received: ", data);
-        dispatch(addMessage({ data: { messageData: data, chatId } }))
-      });
+  //     socket.on("message", ({ data, chatId }) => {
+  //       console.log("message received: ", data);
+  //       dispatch(addMessage({ data: { messageData: data, chatId } }))
+  //     });
 
 
-      socket.on("chatCreated", ({ chat, err }) => {
-        dispatch(addChat({ data: { chatData: chat } }))
-        if (err) {
-          toast.error(err);
-        }
-        else {
-          socket.emit('joinChat', { chatId: chat._id });
-          toast.success("Chat Created Successfully");
-        }
-      })
-    }
+  //     socket.on("chatCreated", ({ chat, err }) => {
+  //       dispatch(addChat({ data: { chatData: chat } }))
+  //       if (err) {
+  //         toast.error(err);
+  //       }
+  //       else {
+  //         socket.emit('joinChat', { chatId: chat._id });
+  //         toast.success("Chat Created Successfully");
+  //       }
+  //     })
+  //   }
 
-    return () => {
-      if (socket) {
-        socket.off('connect');
-        socket.off("message");
-        socket.off("chatCreated");
-      }
-    }
+  //   return () => {
+  //     if (socket) {
+  //       socket.off('connect');
+  //       socket.off("message");
+  //       socket.off("chatCreated");
+  //     }
+  //   }
 
-  }, [socket])
+  // }, [socket])
 
-  useEffect(() => {
-    if (userInfo?._id) {
-      
-      if (schedules.lenght == 0 && !scheduleLoading) {
-        dispatch(getAllSchedule({ filter: { status: { $ne: "pending" } }, limit: 5 }));
-      }
+  // console.log("CHats: ", chats)
 
-      if (chats.length <= 0 && !chatsLoading) {
-        dispatch(getAllChat({ limit: 30 }));
-      }
-    }
+  // useEffect(() => {
 
-  }, [])
+  //   console.log("I AM RUNNING AGAIN")
+
+  //   if (userInfo?._id) {
+
+  //     console.log("SchedulesLoading: ", scheduleLoading)
+  //     console.log("Schedules: ", schedules)
+  //     console.log("========================================================")
+  //     console.log("ChatsLoading: ", chatsLoading)
+  //     console.log("Chats: ", chats)
+
+  //     if (schedules.length <= 0 && !scheduleLoading) {
+  //       // console.log("SCHEDULES: ", schedules)
+  //       // console.log("GETTING USRERS SCHEDULES")
+  //       dispatch(getAllSchedule({ filter: { status: { $ne: "pending" } }, limit: 5 }));
+  //     }
+
+  //     if (chats.length <= 0 && !chatsLoading) {
+  //       // console.log("CHATS: ", chats)
+  //       // console.log("CHATS GETTING")
+  //       dispatch(getAllChat({ limit: 30 }));
+  //     }
+  //   }
+
+  // }, [userInfo])
 
 
   return (
