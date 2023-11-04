@@ -17,6 +17,7 @@ import { useSocket } from "./context/socketContext";
 import { addChat, addMessage } from "./redux/slice/chat/chatSlice";
 import { getAllSchedule } from "./redux/slice/schedule/scheduleAction";
 import { getAllChat } from "./redux/slice/chat/chatAction";
+import Meetings from "./screens/Meetings";
 
 export default function App() {
 
@@ -113,6 +114,8 @@ export default function App() {
         <Route path="/joinCall" element={<JoinCall />} />
         <Route path="/plans" element={<Pricing />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/myMeetings" element={<Meetings />} />
+
       </Routes>
       <ToastContainer />
     </div>

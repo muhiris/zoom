@@ -8,6 +8,8 @@ import MessageItem from '../components/MessageItem'
 import { HiOutlinePaperAirplane } from 'react-icons/hi'
 import axiosInstance from '../api/axios'
 import { SiGooglemessages } from 'react-icons/si'
+import ModalWrapper from '../components/ModalWrapper'
+import Loading from '../components/Loading'
 
 
 // =========================================================
@@ -59,7 +61,7 @@ function formatAMPM(date) {
 // =========================================================
 // MESSAGES VIEW ===========================================
 
-const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, displayName, messageTextValue, chatId, participantId }) => {
+const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, displayName, messageTextValue, chatId, participantId, loading, hasNextPage }) => {
 
     const messagesDivRef = React.useRef(null);
     const { userInfo } = useSelector(state => state.user);
@@ -68,14 +70,25 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
 
     const handleMessageSend = () => {
         dispatch(addMessage({ data: { messageData: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text" }, chatId } }));
-        socket.emit("message", { data: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text", name: userInfo.name }, participantId: participantId, chatId: chatId})
+        socket.emit("message", { data: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text", name: userInfo.name }, participantId: participantId, chatId: chatId })
         clearText();
-        //scroll to bottom
-        messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+        setTimeout(() => {
+            //scroll to bottom after sending message and adding it to the list
+            messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+        }, 100);
+
     }
 
+    useEffect(() => {
+        if (messagesDivRef.current) {
+            console.log("I am here INSIDE: ",chatId)
+            setTimeout(() => {
+                messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+            }, 100);
+        }
+    },[chatId]);
 
-    return (<div className='flex-1 flex flex-col gap-3 p-5 h-screen max-h-screen overflow-hidden'>
+    return (<div className='flex-1 flex flex-col gap-3 p-5 h-screen max-h-screen overflow-hidden relative'>
         <div className='flex items-center justify-between'>
             <div className='flex flex-row items-center gap-3'>
                 <img src={`${axiosInstance.defaults.baseURL}/upload/image/${displayAvatar}`} alt="" className='w-10 h-10 border object-cover rounded-full' />
@@ -84,22 +97,28 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
         </div>
         <div
             ref={messagesDivRef}
-            style={{
-                //scroll bar styles
-
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#d4d4d4 transparent',
+            onScroll={(e) => {
+                if (e.target.scrollTop === 0 && hasNextPage && !loading) {
+                    dispatch(getMessages({ chatId, cursor: data[data.length - 1]._id, limit: 40 })).then(() => {
+                        console.log("Messages: ", data);
+                    })
+                }
 
             }}
             className='flex flex-1 flex-col overflow-y-auto gap-4 px-5'>
+            {loading && <div className="flex self-center items-center justify-center">
+                <Loading type="spin" loadingColor={"#0B5CFF"} size={40} />
+            </div>}
             {
-                data.map((message,index) => <MessageItem
+                data.map((message, index) => <MessageItem
                     key={index.toString()}
                     message={message.message}
                     time={formatAMPM(new Date(message.time))}
                     isMe={message.senderId?.toString() === userInfo._id?.toString()}
                 />)
             }
+
+
         </div>
         <div className='flex items-center px-5'>
             <input onKeyDown={(event) => {
@@ -134,7 +153,7 @@ const Chat = () => {
     let messages = useSelector(state => selectChatMessages(state, selectedChat?.id));
     let thisChat = useSelector(state => selectChatById(state, selectedChat?.id));
 
-    console.log("CHATS: ", chats)
+
     //chats handlers ======================================
     const searchChange = (e) => {
         setChatsSearch(e.target.value)
@@ -169,10 +188,9 @@ const Chat = () => {
         }
     }
 
+
+
     //===============================================================================
-
-
-
     //Chat handlers ======================================
     useEffect(() => {
 
@@ -197,10 +215,12 @@ const Chat = () => {
                 searchChange={searchChange}
                 onChatClick={handleChatPress}
             />
-            <div className='flex-1 flex h-screen max-h-screen overflow-y-auto'>
+            <div className='flex-1 flex h-screen max-h-screen overflow-y-auto relative'>
                 {
                     selectedChat.id ?
                         <MessagesDisplay
+                            hasNextPage={thisChat?.messagesHasNextPage}
+                            loading={chatsLoading}
                             chatId={selectedChat?.id}
                             participantId={thisChat?.participants[0]?._id}
                             data={[...messages].reverse()}
@@ -217,6 +237,7 @@ const Chat = () => {
 
                 }
             </div>
+
         </div>
     )
 }

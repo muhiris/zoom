@@ -9,6 +9,7 @@ import MyStreamView from "../components/MyStreamView";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import RemotePeerStream from "../components/RemotePeerStream";
 import { useSocket } from "../context/socketContext";
+import { toast } from "react-toastify";
 
 
 function Call() {
@@ -565,9 +566,13 @@ function Call() {
   //================================================================= USEEFFECT TO START THE LOCAL MEDIA STREAM =============================================//
   useEffect(() => {
     console.log("LOCATION PATHNAME: ", location.pathname.split('/')[1]);
-    if (location.pathname.split('/')[1] === "call" && socket) {
+    if (location.pathname.split('/')[1] === "call") {
       startLocalMediaStream().then(() => {
-        socket.emit("join-room", { name, userId: userInfo._id, meetId });
+        if(socket){
+          socket.emit("join-room", { meetId, name, video, audio });
+        }else{
+          console.log("Some Issue occured connecting! reload the page");
+        }
       })
     }
 
@@ -637,7 +642,7 @@ function Call() {
         <div className="flex flex-1 gap-4">
           {
             seePeerList.map((item) =>
-              <div className="flex flex-row items-center justify-between">
+              <div className="flex flex-row items-center gap-2">
                 <p className="text-md">{
                   peerData[item]?.name
                 }</p>

@@ -48,6 +48,9 @@ function Navbar() {
               <li className="hidden lg:block text-primary">
                 <NavLink to="/chat">Chats</NavLink>
               </li>
+              <li className="hidden lg:block text-primary">
+                <NavLink to="/myMeetings">Meetings</NavLink>
+              </li>
             </>
           }
           {!userInfo?._id ? <li className="hidden lg:block">

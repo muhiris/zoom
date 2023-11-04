@@ -18,7 +18,8 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     console.log('SocketProvider: userInfo', userInfo);
-    if(!userInfo?._id || socket.connected ) return;
+    console.log('SocketProvider: socket.connected', socket.connected);
+    if(!userInfo?._id ) return;
     console.log('SocketProvider: connecting...');
     const socketConnection = socket.connect();
     setSocketConnection(socketConnection);
