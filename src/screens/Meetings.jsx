@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Button2 from '../components/Button2';
 import { joinMeet } from '../redux/slice/meet/meetAction';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toast';
 import { getAllSchedule } from '../redux/slice/schedule/scheduleAction';
 import ModalWrapper from '../components/ModalWrapper';
 import Loading from '../components/Loading';
@@ -79,7 +79,7 @@ const Meetings = () => {
                 if (res.payload.data.access) {
                     setPassword('');
                     setId(null);
-                    navigate(`/call/${res.payload?.data?.meet?._id}`, {state:{ video: true, audio: true, meetId: res.payload.data.meet._id, name: userInfo.name }});
+                    navigate(`/call/${res.payload?.data?.meet?._id}`, {state:{ video: true, audio: true, meetId: res.payload.data.meet._id, name: userInfo.name,hostId:res?.payload?.data?.meet?.host }});
                 } else {
                     toast.error("You are not allowed to join this meeting");
                     setId(null);

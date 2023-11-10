@@ -7,6 +7,7 @@ import {
   resetPassword,
   updateUserProfile,
   userLogin,
+  userLogout,
 } from "./userAction";
 
 const initialState = {
@@ -58,6 +59,20 @@ const authSlice = createSlice({
         state.success = payload.success;
       })
       .addCase(userLogin.rejected, (state, {payload}) => {
+        state.loading = false;
+        state.error = payload;
+      })
+      .addCase(userLogout.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(userLogout.fulfilled, (state, {payload}) => {
+        state.loading = false;
+        state.userInfo = {};
+        state.accessToken = null;
+        state.success = payload.success;
+      })
+      .addCase(userLogout.rejected, (state, {payload}) => {
         state.loading = false;
         state.error = payload;
       })

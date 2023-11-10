@@ -1,4 +1,4 @@
-import { toast } from 'react-toastify'
+import { toast } from 'react-toast'
 
 export const errorHandler = error => {
   let status = error.response.status;

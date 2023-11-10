@@ -17,7 +17,7 @@ function HeroSection({ heading, paragraph, btn1, btn2, img, redirect1, redirect2
       if(!userInfo?._id) return navigate(`/signup`)
       dispatch(createMeet({})).then((res) => {
         if (createMeet.fulfilled.match(res)) {
-          navigate(`/call/${res?.payload?.data?._id}`, { state: { video: true, audio: true, meetId: res.payload.data._id, name: userInfo.name } })
+          navigate(`/call/${res?.payload?.data?._id}`, { state: { video: true, audio: true, meetId: res.payload.data._id, name: userInfo.name, hostId:res?.payload?.data?.host } })
         }
       })
     } else {

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -9,7 +10,112 @@ import MyStreamView from "../components/MyStreamView";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import RemotePeerStream from "../components/RemotePeerStream";
 import { useSocket } from "../context/socketContext";
-import { toast } from "react-toastify";
+import { toast } from "react-toast";
+import { IoIosAddCircle, } from "react-icons/io";
+import { BsFillMicFill, BsFillMicMuteFill, BsFillCameraVideoFill, BsFillCameraVideoOffFill } from "react-icons/bs";
+import Button from "../components/Button";
+import Button2 from "../components/Button2";
+
+
+
+
+const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) => {
+
+  const socket = useSocket();
+  const [mic, setMic] = useState(true);
+  const [video, setVideo] = useState(true);
+
+
+  const handleMic = () => {
+    socket.emit('mic', { users: [item.userId], action: mic ? "mute" : "unmute", meetId });
+    setMic(!mic);
+  }
+
+  const handleVideo = () => {
+    socket.emit('video', { users: [item.userId], action: video ? "pause" : "resume", meetId });
+    setVideo(!video);
+  }
+
+
+  return (
+    <div className="flex flex-row items-center justify-between flex-1">
+        <p className="text-md">{
+          item.name
+        }</p>
+      <div className="flex flex-row items-center gap-4">
+        <IoIosAddCircle onClick={() => handleAddUser(item.userId)} className="text-2xl text-primary cursor-pointer" />
+        {
+          isHost && (
+            mic ?
+              <BsFillMicFill className="text-2xl text-primary cursor-pointer" onClick={() => handleMic()} />
+              :
+              <BsFillMicMuteFill className="text-2xl text-primary cursor-pointer" onClick={() => handleMic()} />
+          )
+        }
+        {
+          isHost && (
+            video ?
+              <BsFillCameraVideoFill className="text-2xl text-primary cursor-pointer" onClick={() => handleVideo()} />
+              :
+              <BsFillCameraVideoOffFill className="text-2xl text-primary cursor-pointer" onClick={() => handleVideo()} />
+          )
+        }
+      </div>
+    </div>
+  )
+}
+
+
+const ParticipantDrawer = ({ participants, isHost, meetId }) => {
+  const socket = useSocket();
+  const { loading, chats } = useSelector(state => state.chat);
+  const { userInfo } = useSelector(state => state.user);
+  const [userClicked, setUserClicked] = useState(false);
+  const [allMuted, setAllMuted] = useState(false);
+  const [allVideoOff, setAllVideoOff] = useState(false);
+
+
+
+  const handleAddUser = (id) => {
+    socket.emit('createChat', { userId: userInfo.id, participantId: id });
+  }
+
+  const handleVideoOffAll = () => {
+    socket.emit('video', { users: participants.map((item) => item.userId), action: allVideoOff ? "resume" : "pause", meetId });
+    setAllVideoOff(!allVideoOff);
+  }
+
+  const handleMuteAll = () => {
+    socket.emit('mic', { users: participants.map((item) => item.userId), action: allMuted ? "unmute" : "mute", meetId });
+    setAllMuted(!allMuted);
+  }
+
+
+  return (
+    <div className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
+      <p className="text-lg font-bold text-center">Participants</p>
+     {isHost && <div className="flex flex-row items-center justify-center gap-3">
+        <Button2 onClick={() => handleMuteAll()} style={{flex:1}} text={allMuted ? "Unmute All" : "Mute All"} />
+        <Button2 onClick={() => handleVideoOffAll()} style={{flex:1}} text={allVideoOff ? "Resume Video" : "Pause Video"} />
+      </div>}
+      <div className="flex gap-4 overflow-y-auto">
+        {
+          participants.map((item) =>
+            <ListItem key={item?.userId?.toString()}
+              item={item} handleAddUser={handleAddUser} loading={(item.userId == userClicked && loading) ? loading : false}
+              enableAdd={[...chats].filter((chat) => chat?.participants?.includes(item.userId)).length > 0 ? false : true}
+              meetId={meetId}
+              isHost={isHost}
+            />
+          )
+        }
+      </div>
+    </div>
+  )
+
+}
+
+
 
 
 function Call() {
@@ -22,12 +128,15 @@ function Call() {
   const location = useLocation();
   let { loading, error, userInfo, success } = useSelector((state) => state.user);
   const { state } = useLocation();
-  const { meetId, name, video, audio } = state;
+  const { meetId, name, video, audio, hostId } = state;
   const [sound, setSound] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(video);
+  const cameraRef = useRef(video);
   const [facingMode, setFacingMode] = useState('user');
   const [mediaSource, setMediaSource] = useState('camera');
   const [isMuted, setIsMuted] = useState(!audio);
+  const isMutedRef = useRef(!audio);
+  const [recording, setRecording] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [localMediaStream, setLocalMediaStream] = useState();
   const locaMediaRef = useRef();
@@ -36,6 +145,11 @@ function Call() {
   let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
   const remotePeersViewRef = useRef();
   const [sideBar, setSideBar] = useState(false);
+
+
+  //for host controls
+  const mutedByHost = useRef(false);
+  const videoPausedByHost = useRef(false);
 
 
 
@@ -134,14 +248,22 @@ function Call() {
     locaMediaRef.current = null;
   }
 
-  const toggleActiveMicrophone = async () => {
+  const toggleActiveMicrophone = async (stream = undefined) => {
 
     try {
-      const audioTrack = localMediaStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
+      if (!mutedByHost.current) {
+        let audioTrack;
+        if (stream) {
+          audioTrack = stream.getAudioTracks()[0];
+        } else {
+          audioTrack = localMediaStream.getAudioTracks()[0];
+        }
+        if (audioTrack) {
+          audioTrack.enabled = !audioTrack.enabled;
+        }
+        isMutedRef.current = !isMutedRef.current;
+        setIsMuted(isMutedRef.current);
       }
-      setIsMuted(!isMuted);
     } catch (err) {
       console.log(err);
     };
@@ -165,14 +287,22 @@ function Call() {
   }
 
 
-  const toggleCamera = async () => {
+  const toggleCamera = async (stream = undefined) => {
     try {
-      const videoTracks = await localMediaStream.getVideoTracks();
-      if (videoTracks.length > 0) {
-        const videoTrack = videoTracks[0];
-        videoTrack.enabled = !videoTrack.enabled;
+      if (!videoPausedByHost.current) {
+        let videoTracks;
+        if (stream) {
+          videoTracks = stream.getVideoTracks();
+        } else {
+          videoTracks = await localMediaStream.getVideoTracks();
+        }
+        if (videoTracks.length > 0) {
+          const videoTrack = videoTracks[0];
+          videoTrack.enabled = !videoTrack.enabled;
+        }
+        cameraRef.current = !cameraRef.current;
+        setIsCameraOn(cameraRef.current);
       }
-      setIsCameraOn(!isCameraOn);
     } catch (err) {
       console.log(err);
     }
@@ -194,7 +324,7 @@ function Call() {
   const toggleScreenCapture = async () => {
     try {
 
-
+      if (videoPausedByHost.current) { return; }
       if (!isScreenSharing) {
         setIsCameraOn(false);
         setIsScreenSharing(true);
@@ -260,7 +390,7 @@ function Call() {
 
         //* Once the Offer is created and set as the local description, the icecandidate event is fired
         remotePeers.current[userId].onicecandidate = (event) => {
-          if (!event.candidate) { return; };
+          if (!event.candidate) { return; }
           socket.emit('ice-candidate', { iceCandidate: event.candidate, userId });
         }
 
@@ -546,6 +676,43 @@ function Call() {
           console.log("ERROR IN USER LEAVE ROOM: ", err);
         }
       });
+
+
+      socket.on("mic", async ({ action }) => {
+        if (action === "mute") {
+          if (!isMutedRef.current) {
+            if (locaMediaRef.current) {
+              await toggleActiveMicrophone(locaMediaRef.current);
+            }
+          }
+          mutedByHost.current = true;
+          toast.warn("You have been muted by the host");
+        }
+        else if (action === "unmute") {
+          mutedByHost.current = false;
+          toast.success("You have been unmuted by the host");
+        }
+
+      });
+
+      socket.on("video", async ({ action }) => {
+        if (action === "pause") {
+          if (cameraRef.current) {
+            if (locaMediaRef.current) {
+              await toggleCamera(locaMediaRef.current);
+            }
+          }
+          videoPausedByHost.current = true;
+          toast.warn("Your video has been paused by the host");
+        }
+        else if (action === "resume") {
+          videoPausedByHost.current = false;
+          toast.success("Your video has been resumed by the host");
+        }
+      });
+
+
+
     }
 
     return () => {
@@ -555,22 +722,23 @@ function Call() {
         socket.off("answer");
         socket.off("ice-candidate");
         socket.off("user-leave-room");
+        socket.off("mic");
+        socket.off("video");
       }
 
     }
 
-  }, []);
+  }, [socket]);
 
 
   //=========================================================================================================================================================//
   //================================================================= USEEFFECT TO START THE LOCAL MEDIA STREAM =============================================//
   useEffect(() => {
-    console.log("LOCATION PATHNAME: ", location.pathname.split('/')[1]);
     if (location.pathname.split('/')[1] === "call") {
       startLocalMediaStream().then(() => {
-        if(socket){
-          socket.emit("join-room", { meetId, name, video, audio });
-        }else{
+        if (socket) {
+          socket.emit("join-room", {name, userId: userInfo._id, meetId });
+        } else {
           console.log("Some Issue occured connecting! reload the page");
         }
       })
@@ -585,6 +753,8 @@ function Call() {
         socket.off("user-leave-room");
         socket.off("join-room");
         socket.off("leave-room");
+        socket.off("mic");
+        socket.off("video");
       }
     }
   }, [location.pathname]);
@@ -626,9 +796,9 @@ function Call() {
           speaker={sound}
           toggleSpeaker={handleSpeakerToggle}
           microphone={!isMuted}
-          toggleMicrophone={toggleActiveMicrophone}
+          toggleMicrophone={()=>toggleActiveMicrophone()}
           camera={isCameraOn}
-          toggleCamera={toggleCamera}
+          toggleCamera={()=>toggleCamera()}
           screenShare={isScreenSharing}
           toggleScreenShare={toggleScreenCapture}
           toggleParticipants={() => { setSideBar(!sideBar) }}
@@ -638,18 +808,20 @@ function Call() {
       <div style={{
         right: sideBar ? "0px" : "-100%",
       }} className="w-[30%] z-50 h-screen max-h-screen flex flex-col absolute right-0 top-0 bottom-0 ease-in-out transition-all bg-white p-10">
-        <p className="text-lg font-bold text-center">Participants</p>
-        <div className="flex flex-1 gap-4">
-          {
-            seePeerList.map((item) =>
-              <div className="flex flex-row items-center gap-2">
-                <p className="text-md">{
-                  peerData[item]?.name
-                }</p>
-              </div>
-            )
+        <ParticipantDrawer
+          // eslint-disable-next-line react/no-unknown-property
+          participants={
+            Object.keys(peerData).map((item) => {
+              return {
+                userId: peerData[item]?.userId,
+                name: peerData[item]?.name,
+                socketId: peerData[item]?.socketId
+              }
+            })
           }
-        </div>
+          isHost={userInfo?._id?.toString() === hostId?.toString()}
+          meetId={meetId}
+        />
       </div>
     </div>
   );

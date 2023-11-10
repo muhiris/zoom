@@ -26,7 +26,7 @@ import Footer from "../components/Footer";
 import { useDispatch, useSelector } from "react-redux";
 import { addChat, addMessage } from "../redux/slice/chat/chatSlice";
 import { getAllChat } from "../redux/slice/chat/chatAction";
-import { toast } from "react-toastify";
+import { toast } from "react-toast";
 import { getAllSchedule } from "../redux/slice/schedule/scheduleAction";
 import { useSocket } from "../context/socketContext";
 

@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../redux/slice/user/userAction";
-import { toast } from "react-toastify";
+import { toast } from "react-toast";
 //functional component
 const SignUp = () => {
 

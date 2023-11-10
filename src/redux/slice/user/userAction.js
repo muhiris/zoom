@@ -1,7 +1,7 @@
 import {createAsyncThunk} from "@reduxjs/toolkit";
 import axios from "../../../api/axios";
 import {errorHandler} from "../../errorHanlder";
-import {save} from "../../reuseable";
+import {get, save} from "../../reuseable";
 
 export const userLogin = createAsyncThunk(
   "auth/login",
@@ -20,6 +20,24 @@ export const userLogin = createAsyncThunk(
     }
   }
 );
+
+
+export const userLogout = createAsyncThunk(
+  "auth/logout",
+  async (_, {rejectWithValue}) => {
+    try {
+
+      const refreshToken = await get("refreshToken");
+      const {data} = await axios.post("/auth/logout",{refreshToken});
+
+      return data;
+    } catch (error) {
+      let err = errorHandler(error);
+      return rejectWithValue(err);
+    }
+  }
+);
+
 
 export const registerUser = createAsyncThunk(
   "auth/signup",

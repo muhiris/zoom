@@ -5,7 +5,7 @@ import Button from '../components/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import { joinMeet } from '../redux/slice/meet/meetAction';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toast';
 
 const JoinCall = () => {
 
@@ -112,7 +112,7 @@ const JoinCall = () => {
         dispatch(joinMeet(payload)).then((res) => {
             if (joinMeet.fulfilled.match(res)) {
                 if (res.payload.data.access) {
-                    navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value } });
+                    navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId:res?.payload?.data?.meet?.host } });
                 } else {
                     toast.error('You are not allowed to join this meeting');
                 }

@@ -7,7 +7,7 @@ import "../index.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { userLogin } from "../redux/slice/user/userAction";
-import { toast } from "react-toastify";
+import { toast } from "react-toast";
 import Button from "../components/Button";
 //functional component
 const SignIn = () => {

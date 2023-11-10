@@ -5,6 +5,8 @@ import HamburgerNav from "./HamburgerNav";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/slice/user/userSlice"
 import { useSocket } from "../context/socketContext";
+import { userLogout } from "../redux/slice/user/userAction";
+import { toast } from "react-toast";
 function Navbar() {
 
   const dispatch = useDispatch();
@@ -63,10 +65,17 @@ function Navbar() {
           </li>
             :
             <li onClick={() => {
-              if (socket) {
-                socket.disconnect();
-              }
-              dispatch(logout())
+             
+              dispatch(userLogout()).then((res)=>{
+                if(userLogout.fulfilled.match(res)){
+                  dispatch(logout())
+                  if (socket) {
+                    socket.disconnect();
+                  }
+                }
+              }).catch((err)=>{
+                toast.error("Error Logging Out")
+              })
             }} className="hidden lg:block">
               <div
                 className=" p-2 px-5 border-2 border-[red] text-[red] rounded-2xl hover:translate-y-1 hover:shadow-md transition-all duration-300 ease-in-out"

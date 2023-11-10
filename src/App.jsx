@@ -6,7 +6,7 @@ import SignUp from "./screens/SignUp";
 import Pricing from "./screens/Pricing";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CustomPlan from "./screens/CustomPlan";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toast";
 import "react-toastify/dist/ReactToastify.css";
 import JoinCall from "./screens/joinCall";
 import { useEffect } from "react";
@@ -117,7 +117,7 @@ export default function App() {
         <Route path="/myMeetings" element={<Meetings />} />
 
       </Routes>
-      <ToastContainer />
+      <ToastContainer delay={4000} />
     </div>
   );
 }
