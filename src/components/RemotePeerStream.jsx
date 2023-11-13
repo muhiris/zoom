@@ -12,7 +12,7 @@ function RemotePeerStream(props) {
 
     return (
         <div style={props.style} className='flex flex-1 relative w-full h-full items-center justify-center '>
-            <video id={`remotePeer-${props.userId}`} autoPlay className='w-full h-full object-contain bg-black' />
+            <video id={`remotePeer-${props.userId}`} autoPlay className='w-full h-full object-scale-down bg-black' />
             {
                 props.name &&
                 <p className='absolute bottom-0 left-0 right-0 text-white text-lg text-start bg-black bg-opacity-50'>{props.name}</p>

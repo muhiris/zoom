@@ -797,7 +797,7 @@ function Call() {
 
 
   return (
-    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden border border-[red] relative">
+    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden  relative">
 
       <div className={`flex-1 overflow-hidden grid ${seePeerList.length <=1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
         <div style={{
@@ -806,8 +806,10 @@ function Call() {
           minHeight: seePeerList.length == 1 ? "150px" : (window.innerHeight * 0.9) / 2,
           position: seePeerList.length ==1 ? "absolute" : "relative",
           zIndex: 1,
+          borderWidth:seePeerList.length ==1 ? "1px" : "0px",
+          borderColor: "white",
         }}
-          className="bg-black border border-[green]"
+          className="bg-black"
         >
           <MyStreamView
             src={localMediaStream}
@@ -833,7 +835,7 @@ function Call() {
                 width: "100%",
                 maxWidth: "100%",
               }}
-              className=" bg-black border-[red]">
+              className=" bg-black ">
               <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
                 peerData[item]?.userId
               } />
