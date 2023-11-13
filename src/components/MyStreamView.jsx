@@ -23,7 +23,7 @@ function MyStreamView(props) {
     return (
         <div style={props.style} className='relative flex flex-1'>
             <video style={props.videoStyle} id='myVideo'  autoPlay className='w-full h-full flex-1 object-contain bg-black' playsInline />
-            <div className='flex-1  flex items-center justify-between absolute bottom-0 w-full'>
+            {!props.hideControls && <div className='flex-1  flex items-center justify-between absolute bottom-0 w-full'>
                 <div className='flex items-center gap-4 justify-center flex-1'>
                     <div className='flex flex-col items-center'>
                         {props.speaker ?
@@ -69,7 +69,7 @@ function MyStreamView(props) {
                     
                 </div>}
 
-            </div>
+            </div>}
         </div>
     )
 }

@@ -15,8 +15,38 @@ import { IoIosAddCircle, } from "react-icons/io";
 import { BsFillMicFill, BsFillMicMuteFill, BsFillCameraVideoFill, BsFillCameraVideoOffFill } from "react-icons/bs";
 import Button from "../components/Button";
 import Button2 from "../components/Button2";
+import { BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill, BsPeopleFill } from 'react-icons/bs';
+import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
+import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
 
 
+
+
+const ResponsiveGridLayout = ({ items }) => {
+  let gridClasses = 'grid-cols-1 grid-flow-col';
+  let itemClasses = 'w-full';
+
+  if (items.length === 1) {
+    gridClasses = 'grid-cols-1 grid-flow-row';
+  } else if (items.length === 2) {
+    gridClasses = 'grid-cols-1 md:grid-cols-2 grid-flow-row';
+    itemClasses = 'w-full md:h-1/2';
+  } else {
+    gridClasses = 'grid-cols-3 md:grid-cols-2 lg:grid-cols-3 grid-flow-col';
+    itemClasses = 'w-full md:h-1/2 lg:h-1/3';
+  }
+
+  return (
+    <div className={`flex flex-col h-screen ${gridClasses} gap-4`}>
+      {items.map((item, index) => (
+        <div key={index} className={itemClasses}>
+          {/* Your item content goes here */}
+          {item}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 
 const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) => {
@@ -39,9 +69,9 @@ const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) =
 
   return (
     <div className="flex flex-row items-center justify-between flex-1">
-        <p className="text-md">{
-          item.name
-        }</p>
+      <p className="text-md">{
+        item.name
+      }</p>
       <div className="flex flex-row items-center gap-4">
         <IoIosAddCircle onClick={() => handleAddUser(item.userId)} className="text-2xl text-primary cursor-pointer" />
         {
@@ -94,9 +124,9 @@ const ParticipantDrawer = ({ participants, isHost, meetId }) => {
   return (
     <div className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
       <p className="text-lg font-bold text-center">Participants</p>
-     {isHost && <div className="flex flex-row items-center justify-center gap-3">
-        <Button2 onClick={() => handleMuteAll()} style={{flex:1}} text={allMuted ? "Unmute All" : "Mute All"} />
-        <Button2 onClick={() => handleVideoOffAll()} style={{flex:1}} text={allVideoOff ? "Resume Video" : "Pause Video"} />
+      {isHost && <div className="flex flex-row items-center justify-center gap-3">
+        <Button2 onClick={() => handleMuteAll()} style={{ flex: 1 }} text={allMuted ? "Unmute All" : "Mute All"} />
+        <Button2 onClick={() => handleVideoOffAll()} style={{ flex: 1 }} text={allVideoOff ? "Resume Video" : "Pause Video"} />
       </div>}
       <div className="flex gap-4 overflow-y-auto">
         {
@@ -737,7 +767,7 @@ function Call() {
     if (location.pathname.split('/')[1] === "call") {
       startLocalMediaStream().then(() => {
         if (socket) {
-          socket.emit("join-room", {name, userId: userInfo._id, meetId });
+          socket.emit("join-room", { name, userId: userInfo._id, meetId });
         } else {
           console.log("Some Issue occured connecting! reload the page");
         }
@@ -764,46 +794,52 @@ function Call() {
   // =========================================================================================================================================================//
   // ======================================================================= RETURNS VIEW ====================================================================//
 
+
+
   return (
-    <div className="flex flex-1 flex-col h-screen max-h-screen relative overflow-hidden">
-      {/* Participants Streams */}
-      <div ref={remotePeersViewRef} className="flex w-full items-center overflow-y-hidden  h-[150px] min-h-[150px]">
-        <AiOutlineLeft className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
-          remotePeersViewRef.current.scrollLeft -= 100;
-        }} />
-        <div className="flex flex-1 items-center min-h-full h-full  ">
-          {
-            seePeerList.map((item) =>
+    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden border border-[red] relative">
+
+      <div className={`flex-1 overflow-hidden grid ${seePeerList.length <=1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
+        <div style={{
+          width: seePeerList.length ==1 ? "200px" : "100%",
+          height: seePeerList.length == 1 ? "150px" : "100%",
+          minHeight: seePeerList.length == 1 ? "150px" : (window.innerHeight * 0.9) / 2,
+          position: seePeerList.length ==1 ? "absolute" : "relative",
+          zIndex: 1,
+        }}
+          className="bg-black border border-[green]"
+        >
+          <MyStreamView
+            src={localMediaStream}
+            speaker={sound}
+            toggleSpeaker={handleSpeakerToggle}
+            microphone={!isMuted}
+            toggleMicrophone={() => toggleActiveMicrophone()}
+            camera={isCameraOn}
+            toggleCamera={() => toggleCamera()}
+            screenShare={isScreenSharing}
+            toggleScreenShare={toggleScreenCapture}
+            toggleParticipants={() => { setSideBar(!sideBar) }}
+            endCall={handleEndCall}
+            hideControls={true}
+          />
+        </div>
+        {
+          seePeerList.map((item) =>
+            <div
+              style={{
+                height: "100%",
+                minHeight: (window.innerHeight * 0.9) / 2,
+                width: "100%",
+                maxWidth: "100%",
+              }}
+              className=" bg-black border-[red]">
               <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
                 peerData[item]?.userId
               } />
-            )
-          }
-        </div>
-        <AiOutlineRight className="text-3xl text-gray-500 cursor-pointer " onClick={() => {
-          remotePeersViewRef.current.scrollLeft -= 100;
-        }} />
-      </div>
-      {/* My Stream */}
-      <div
-        style={{
-          height: "calc(100% - 150px)",
-          maxHeight: "calc(100% - 150px)",
-        }}
-        className="flex flex-1 ">
-        <MyStreamView
-          src={localMediaStream}
-          speaker={sound}
-          toggleSpeaker={handleSpeakerToggle}
-          microphone={!isMuted}
-          toggleMicrophone={()=>toggleActiveMicrophone()}
-          camera={isCameraOn}
-          toggleCamera={()=>toggleCamera()}
-          screenShare={isScreenSharing}
-          toggleScreenShare={toggleScreenCapture}
-          toggleParticipants={() => { setSideBar(!sideBar) }}
-          endCall={handleEndCall}
-        />
+            </div>
+          )
+        }
       </div>
       <div style={{
         right: sideBar ? "0px" : "-100%",
@@ -823,6 +859,58 @@ function Call() {
           meetId={meetId}
         />
       </div>
+
+      <div className='bg-black flex items-center justify-between w-full h-[10%] max-h-[10%]'>
+        <div className='flex items-center gap-4 justify-center flex-1'>
+          <div className='flex flex-col items-center'>
+            {sound ?
+              <GiSpeaker className='text-white text-2xl' onClick={handleSpeakerToggle} /> :
+              <GiSpeakerOff className='text-white text-2xl' onClick={handleSpeakerToggle} />
+            }
+            <p className='text-lg text-white'>Speaker</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            {!isMuted ?
+              <BsMicFill className='text-white text-2xl' onClick={() => toggleActiveMicrophone()} /> :
+              <BsFillMicMuteFill className='text-white text-2xl' onClick={() => toggleActiveMicrophone()} />
+            }
+            <p className='text-lg text-white'>Microphone</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            {
+              isCameraOn ?
+                <BsCameraVideoFill className='text-white text-2xl' onClick={() => toggleCamera()} /> :
+                <BsCameraVideoOffFill className='text-white text-2xl' onClick={() => toggleCamera()} />
+            }
+            <p className='text-lg text-white'>Camera</p>
+          </div>
+        </div>
+
+        <div className='flex flex-1 items-center gap-4 justify-center'>
+          <div className='flex flex-col items-center'>
+            <BsPeopleFill className='text-white text-2xl' onClick={() => { setSideBar(!sideBar) }} />
+            <p className='text-lg text-white'>Participants</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            {
+              isScreenSharing ?
+                <MdOutlineStopScreenShare className='text-white text-2xl' onClick={toggleScreenCapture} /> :
+                <MdOutlineScreenShare className='text-white text-2xl' onClick={toggleScreenCapture} />
+            }
+            <p className='text-lg text-white'>Screen Share</p>
+          </div>
+        </div>
+
+        <div className='flex flex-1 items-center justify-center gap-4'>
+          <Button style={{ backgroundColor: "red" }} text={"End Call"} onClick={handleEndCall} />
+
+        </div>
+
+      </div>
+
+
+
+
     </div>
   );
 }

@@ -11,11 +11,11 @@ function RemotePeerStream(props) {
     }, [props?.src])
 
     return (
-        <div className='flex flex-1 relative w-[150px] max-w-[150px] h-full '>
-            <video id={`remotePeer-${props.userId}`} autoPlay className='w-[150px] max-w-[150px] object-contain bg-black' />
+        <div style={props.style} className='flex flex-1 relative w-full h-full items-center justify-center '>
+            <video id={`remotePeer-${props.userId}`} autoPlay className='w-full h-full object-contain bg-black' />
             {
                 props.name &&
-                <p className='absolute bottom-0 left-0 right-0 text-white text-lg text-center bg-black bg-opacity-50'>{props.name}</p>
+                <p className='absolute bottom-0 left-0 right-0 text-white text-lg text-start bg-black bg-opacity-50'>{props.name}</p>
             }
             {
                 props.loading &&
@@ -23,13 +23,19 @@ function RemotePeerStream(props) {
                     height={50}
                     width={50}
                     color="#ffffff"
-                    wrapperStyle={{}}
+                    wrapperStyle={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)'
+                    }}
                     wrapperClass=""
                     visible={true}
                     ariaLabel="three-circles-rotating"
                     outerCircleColor=""
                     innerCircleColor=""
                     middleCircleColor=""
+                   
                 />
 
             }
