@@ -18,6 +18,12 @@ import { addChat, addMessage } from "./redux/slice/chat/chatSlice";
 import { getAllSchedule } from "./redux/slice/schedule/scheduleAction";
 import { getAllChat } from "./redux/slice/chat/chatAction";
 import Meetings from "./screens/Meetings";
+import { getPlans } from "./redux/slice/plans/PlanAction";
+import StripePaymentElement from "./screens/StripePaymentElement";
+import { getAllFeatures } from "./redux/slice/feature/featureAction";
+
+
+
 
 export default function App() {
 
@@ -26,6 +32,10 @@ export default function App() {
   const { userInfo } = useSelector(state => state.user);
   const { loading: scheduleLoading, schedules, error: scheduleError } = useSelector(state => state.schedule);
   const { loading: chatsLoading, chats, error: chatsError, hasNextPage: chatsHasNextPage } = useSelector(state => state.chat);
+  const { loading: plansLoading, plans, error: plansError, success: plansSuccess } = useSelector(state => state.plan);
+  const { loading: featuresLoading, features, error: featuresError, success: featuresSuccess } = useSelector(state => state.feature);
+
+
 
   //to get usrer credentials after each refresh
   useEffect(() => {
@@ -42,64 +52,69 @@ export default function App() {
   }, []);
 
 
-    // Socket Listeners =====================================
-    useEffect(() => {
+  // Socket Listeners =====================================
+  useEffect(() => {
 
-      if (socket && userInfo?._id) {
-        socket.on('connect', () => {
-          socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
-        });
-  
-        socket.on("message", ({ data, chatId }) => {
-          console.log("message received: ", data);
-          dispatch(addMessage({ data: { messageData: data, chatId } }))
-        });
-  
-  
-        socket.on("chatCreated", ({ chat, err }) => {
-          dispatch(addChat({ data: { chatData: chat } }))
-          if (err) {
-            toast.error(err);
-          }
-          else {
-            socket.emit('joinChat', { chatId: chat._id });
-            toast.success("Chat Created Successfully");
-          }
-        })
-      }
-  
-      return () => {
-        if (socket) {
-          socket.off('connect');
-          socket.off("message");
-          socket.off("chatCreated");
-        }
-      }
-  
-    }, [socket])
-  
+    if (socket && userInfo?._id) {
+      socket.on('connect', () => {
+        socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
+      });
+
+      socket.on("message", ({ data, chatId }) => {
+        console.log("message received: ", data);
+        dispatch(addMessage({ data: { messageData: data, chatId } }))
+      });
 
 
-    //get all chats and schedules after user is logged in
-    useEffect(() => {
-  
-  
-      if (userInfo?._id) {
-  
-        if (schedules.length <= 0 && !scheduleLoading) {
-          // console.log("SCHEDULES: ", schedules)
-          // console.log("GETTING USRERS SCHEDULES")
-          dispatch(getAllSchedule({ filter: { status: { $ne: "pending" } }, limit: 5 }));
+      socket.on("chatCreated", ({ chat, err }) => {
+        dispatch(addChat({ data: { chatData: chat } }))
+        if (err) {
+          toast.error(err);
         }
-  
-        if (chats.length <= 0 && !chatsLoading) {
-          // console.log("CHATS: ", chats)
-          // console.log("CHATS GETTING")
-          dispatch(getAllChat({ limit: 30 }));
+        else {
+          socket.emit('joinChat', { chatId: chat._id });
+          toast.success("Chat Created Successfully");
         }
+      })
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('connect');
+        socket.off("message");
+        socket.off("chatCreated");
       }
-  
-    }, [userInfo])
+    }
+
+  }, [socket])
+
+
+
+  //get all chats and schedules after user is logged in
+  useEffect(() => {
+
+
+    if (userInfo?._id) {
+
+      if (schedules.length <= 0 && !scheduleLoading) {
+        dispatch(getAllSchedule({ filter: { status: { $ne: "pending" } }, limit: 5 }));
+      }
+
+      if (chats.length <= 0 && !chatsLoading) {
+        dispatch(getAllChat({ limit: 30 }));
+      }
+
+      if (plans.length == 0 && !plansLoading) {
+        dispatch(getPlans());
+      }
+
+      if(features.length ==0 && !featuresLoading){
+        dispatch(getAllFeatures())
+      }
+
+    }
+
+  }, [userInfo?._id])
 
 
   return (
@@ -115,6 +130,7 @@ export default function App() {
         <Route path="/plans" element={<Pricing />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/myMeetings" element={<Meetings />} />
+        <Route path="/payment" element={<StripePaymentElement />} />
 
       </Routes>
       <ToastContainer delay={4000} />

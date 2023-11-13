@@ -18,3 +18,19 @@ export const getPlans = createAsyncThunk(
   }
   );
 
+
+export const getPlanById = createAsyncThunk(
+  "plans/getById",
+  async (id, {rejectWithValue}) => {
+      try {
+      const {data} = await axios.get(`/plan/${id}`);
+      return data;
+      } catch (error) {
+      let err = errorHandler(error);
+      return rejectWithValue(err);
+      }
+  }
+  );
+
+
+
