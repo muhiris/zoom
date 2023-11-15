@@ -18,11 +18,12 @@ const Button2 = ({
             type={type || "button"}
             disabled={loading || disabled} onClick={onClick || null}
             style={{
+                display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: 10,
-                borderRadius: 20,
+                borderRadius: 7,
                 marginVertical: 5,
                 borderWidth: 1,
                 backgroundColor: !transparent ? "#0B5CFF" : 'transparent', borderColor: !transparent ? "#0B5CFF" : '#EEEEEE', ...style

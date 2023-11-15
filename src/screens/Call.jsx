@@ -18,35 +18,8 @@ import Button2 from "../components/Button2";
 import { BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill, BsPeopleFill } from 'react-icons/bs';
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
 import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
+import { joinMeet } from "../redux/slice/meet/meetAction";
 
-
-
-
-const ResponsiveGridLayout = ({ items }) => {
-  let gridClasses = 'grid-cols-1 grid-flow-col';
-  let itemClasses = 'w-full';
-
-  if (items.length === 1) {
-    gridClasses = 'grid-cols-1 grid-flow-row';
-  } else if (items.length === 2) {
-    gridClasses = 'grid-cols-1 md:grid-cols-2 grid-flow-row';
-    itemClasses = 'w-full md:h-1/2';
-  } else {
-    gridClasses = 'grid-cols-3 md:grid-cols-2 lg:grid-cols-3 grid-flow-col';
-    itemClasses = 'w-full md:h-1/2 lg:h-1/3';
-  }
-
-  return (
-    <div className={`flex flex-col h-screen ${gridClasses} gap-4`}>
-      {items.map((item, index) => (
-        <div key={index} className={itemClasses}>
-          {/* Your item content goes here */}
-          {item}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 
 const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) => {
@@ -128,7 +101,7 @@ const ParticipantDrawer = ({ participants, isHost, meetId }) => {
         <Button2 onClick={() => handleMuteAll()} style={{ flex: 1 }} text={allMuted ? "Unmute All" : "Mute All"} />
         <Button2 onClick={() => handleVideoOffAll()} style={{ flex: 1 }} text={allVideoOff ? "Resume Video" : "Pause Video"} />
       </div>}
-      <div className="flex gap-4 overflow-y-auto">
+      <div className="flex flex-col gap-4 overflow-y-auto">
         {
           participants.map((item) =>
             <ListItem key={item?.userId?.toString()}
@@ -188,13 +161,14 @@ function Call() {
   let isFrontCamera = true;
   let cameraCount = 0;
   let mediaConstraints = {
-    audio: { 'echoCancellation': true, deviceId: 'default' },
+    audio: { echoCancellation: true },
     video: {
       frameRate: 30,
       facingMode: facingMode,
       mediaSource: mediaSource,
-      width: { min: 640, ideal: 1280, max: 1920 },
-      height: { min: 480, ideal: 720, max: 1080 }
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+
     }
   };
 
@@ -239,6 +213,90 @@ function Call() {
     setPeerList(Object.keys(peerData));
     console.log("Peer Data FOR USER NAME: ", userInfo.name, ": ", peerData);
   }, [peerData]);
+
+
+
+
+  useEffect(() => {
+    let hasDeviceChangeOccurred = false;
+
+    const handleDeviceChange = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        let audioInputDeviceId;
+        let audioOutputDeviceId;
+        console.log('Available devices:', devices);
+
+        devices.forEach((device) => {
+          if (device.kind === 'audioinput') {
+            audioInputDeviceId = device.deviceId === 'default' ? undefined : device.deviceId;
+          }
+          if (device.kind === 'audiooutput') {
+            audioOutputDeviceId = device.deviceId === 'default' ? undefined : device.deviceId;
+          }
+        });
+
+        // Check if there is a change in audio input or output devices
+        if (
+          audioInputDeviceId !== mediaConstraints.audio.inputDeviceId
+          || audioOutputDeviceId !== mediaConstraints.audio.outputDeviceId
+        ) {
+          hasDeviceChangeOccurred = true;
+          mediaConstraints.audio.inputDeviceId = audioInputDeviceId;
+          mediaConstraints.audio.outputDeviceId = audioOutputDeviceId;
+          console.log('Audio device change detected. Updating media constraints:', mediaConstraints);
+        }
+      } catch (error) {
+        console.error('Error handling device change:', error);
+      }
+
+      // Trigger renegotiation after handling device change
+      handleRenegotiation();
+    };
+
+    const handleRenegotiation = async () => {
+      if (hasDeviceChangeOccurred) {
+        // Replace the tracks in the local media stream
+        const newMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+        newMediaStream.getTracks().forEach((track) => {
+          locaMediaRef.current.getTracks().forEach((oldTrack) => {
+            if (oldTrack.kind === track.kind) {
+              locaMediaRef.current.removeTrack(oldTrack);
+            }
+          });
+          locaMediaRef.current.addTrack(track);
+        });
+        setLocalMediaStream(locaMediaRef.current);
+
+        // Replace the tracks in the remote media streams
+        Object.keys(remotePeers.current).forEach((userId) => {
+          remotePeers.current[userId].getSenders().forEach((sender) => {
+            newMediaStream.getTracks().forEach((track) => {
+              if (track.kind === sender.track.kind) {
+                sender.replaceTrack(track);
+              }
+            });
+          });
+        });
+
+
+        hasDeviceChangeOccurred = false;
+      }
+    };
+
+    // Initial device enumeration
+    handleDeviceChange();
+
+    // Listen for device changes
+    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+
+    // Cleanup: Remove the event listener when the component unmounts
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+    };
+  }, []); // No dependencies, so it runs once on mount
+
+
 
 
   //=========================================================================================================================================================//
@@ -287,6 +345,7 @@ function Call() {
           audioTrack = stream.getAudioTracks()[0];
         } else {
           audioTrack = localMediaStream.getAudioTracks()[0];
+          console.log("AUDIO TRACK: ", audioTrack);
         }
         if (audioTrack) {
           audioTrack.enabled = !audioTrack.enabled;
@@ -360,29 +419,38 @@ function Call() {
         setIsScreenSharing(true);
 
         // display media with microphone audio
-        const mediaStream = await navigator.mediaDevices.getDisplayMedia();
+        const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         // replace audio track in mediaStream with audio from microphone
         // const audioTrack = localMediaStream.getAudioTracks()[0];
         // mediaStream.addTrack(audioTrack);
-
         setLocalMediaStream(mediaStream);
-        locaMediaRef.current = mediaStream;
+        // locaMediaRef.current = mediaStream;
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
             sender.replaceTrack(mediaStream.getTracks()[0]);
           });
         });
       } else {
+
         setIsScreenSharing(false);
         setIsCameraOn(true);
-        await startLocalMediaStream();
-        localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
-        locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
+
+        // setLocalMediaStream(locaMediaRef.current);
+        // await startLocalMediaStream();
+
+        //put back the camera stream
+        setLocalMediaStream(locaMediaRef.current);
+
+
+
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
-            sender.replaceTrack(locaMediaRef.current.getTracks()[0]);
+            sender.replaceTrack(locaMediaRef.current.getTracks(mediaConstraints)[0]);
           });
         });
+
+
+
       }
 
 
@@ -764,15 +832,39 @@ function Call() {
   //=========================================================================================================================================================//
   //================================================================= USEEFFECT TO START THE LOCAL MEDIA STREAM =============================================//
   useEffect(() => {
-    if (location.pathname.split('/')[1] === "call") {
-      startLocalMediaStream().then(() => {
-        if (socket) {
-          socket.emit("join-room", { name, userId: userInfo._id, meetId });
-        } else {
-          console.log("Some Issue occured connecting! reload the page");
-        }
-      })
+
+    if (meetId) {
+      if (location.pathname.split('/')[1] === "call") {
+        startLocalMediaStream().then(() => {
+          if (socket) {
+            socket.emit("join-room", { name, userId: userInfo._id, meetId });
+          } else {
+            console.log("Some Issue occured connecting! reload the page");
+          }
+        })
+      }
     }
+    // else {
+    //   if (location.pathname.split('/')[1] === "call") {
+
+    //     const payload = {
+    //       meetId: location.pathname.split('/')[2],
+    //       passcode: e.target.passCode.value || null,
+    //       type: 'internal',
+    //   }
+
+    //     //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
+    //     dispatch(joinMeet(payload)).then((res) => {
+    //       if (joinMeet.fulfilled.match(res)) {
+    //         if (res.payload.data.access) {
+    //           navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
+    //         } else {
+    //           toast.error('You are not allowed to join this meeting');
+    //         }
+    //       }
+    //     })
+    //   }
+    // }
 
     return () => {
       if (socket) {
@@ -797,16 +889,16 @@ function Call() {
 
 
   return (
-    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden  relative">
+    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden relative bg-black">
 
-      <div className={`flex-1 overflow-hidden grid ${seePeerList.length <=1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
+      <div className={`flex-1 overflow-hidden grid ${seePeerList.length <= 1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
         <div style={{
-          width: seePeerList.length ==1 ? "200px" : "100%",
+          width: seePeerList.length == 1 ? "200px" : "100%",
           height: seePeerList.length == 1 ? "150px" : "100%",
           minHeight: seePeerList.length == 1 ? "150px" : (window.innerHeight * 0.9) / 2,
-          position: seePeerList.length ==1 ? "absolute" : "relative",
+          position: seePeerList.length == 1 ? "absolute" : "relative",
           zIndex: 1,
-          borderWidth:seePeerList.length ==1 ? "1px" : "0px",
+          borderWidth: seePeerList.length == 1 ? "1px" : "0px",
           borderColor: "white",
         }}
           className="bg-black"

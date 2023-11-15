@@ -34,7 +34,7 @@ function Plans({planName,price,info,time,features,handleSubscribe,_id,selected})
     <div className="features px-10 py-16">
         <h1 className="uppercase text-xl">features</h1>
     <ul>
-        {
+        { features &&
           Object.entries(features).map(([key,value],index)=>
           <li className="flex items-center gap-2 my-3">
               <img src={checkCircle} alt="" />

@@ -1,44 +1,78 @@
 //write basic form react component
-import React, { useState } from "react";
-import google from "../assets/google.svg";
+import React, { useEffect, useState } from "react";
+import Google from "../assets/Svgs/Google";
 import rightImage from "../assets/humanSignin.png";
 import InputField from "../components/InputField";
 import "../index.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { userLogin } from "../redux/slice/user/userAction";
 import { toast } from "react-toast";
 import Button from "../components/Button";
+import axiosInstance from "../api/axios";
+import Button2 from "../components/Button2";
+import { setCredentials } from "../redux/slice/user/userSlice";
 //functional component
 const SignIn = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const {loading:authLoading, userInfo, error:authError} = useSelector(state => state.user);
+  const { loading: authLoading, userInfo, error: authError } = useSelector(state => state.user);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const user = queryParams.get("user");
+  const accessToken = queryParams.get("accessToken");
+  const refreshToken = queryParams.get("refreshToken");
+  const googleError = queryParams.get("error");
+  const [loading, setLoading] = useState(false);
 
 
   const handleLocalSignIn = (e) => {
-    try{
+    try {
 
-    
-    e.preventDefault();
-    const payload = {
-      email: e.target.email.value,
-      password: e.target.password.value,
+
+      e.preventDefault();
+      const payload = {
+        email: e.target.email.value,
+        password: e.target.password.value,
+      }
+
+      dispatch(userLogin({ ...payload })).then((res) => {
+        if (userLogin.fulfilled.match(res)) {
+          console.log(res);
+          toast.success("Login Successfull");
+          navigate("/");
+        }
+      })
+    } catch (err) {
+      console.log(err);
     }
 
-    dispatch(userLogin({...payload})).then((res)=>{
-      if(userLogin.fulfilled.match(res)){
-        console.log(res);
-        toast.success("Login Successfull");
-        navigate("/");
-      }
-    })
-  }catch(err){
-    console.log(err);
   }
 
+  //==================== GOOGLE SIGN IN ====================//
+  const handleGoogleSignIn = () => {
+    window.location.href = `${axiosInstance.defaults.baseURL}/auth/google-web`;
   }
+
+  useEffect(() => {
+    setLoading(true);
+    if (user && accessToken && refreshToken) {
+      dispatch(setCredentials({ user, accessToken, refreshToken }));
+    } else if (googleError) {
+      toast.error("Google Login Failed");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (userInfo?._id !== undefined) {
+      navigate("/");
+    }
+    setLoading(false);
+  }, [userInfo]);
+
+
+  //============================================================
 
 
   return (
@@ -85,15 +119,19 @@ const SignIn = () => {
             className="bg-primary text-white px-4 py-2 rounded-md"
           /> */}
           <Button type={"submit"} text={"Sign In"} loading={authLoading} />
-          <div className="flex-center mt-4 border  border-gray-300 rounded-md">
-            <img src={google} alt="" />
-            <input
-              type="submit"
-              id="button"
-              value="Sign In with Google"
-              className="px-4 py-2 text-black"
-            />
-          </div>
+          <Button2
+            onClick={handleGoogleSignIn}
+            style={{
+              backgroundColor: "#fff",
+              borderColor: "#0000002e",
+              marginTop: 10,
+              padding: 7
+
+            }}
+            loading={loading}
+            disabled={authLoading}
+            textStyle={{ color: "#000000", fontWeight: "400", fontSize: 17 }} ICON={Google} text={"Sign In with Google"} />
+
           <div className="flex-center mt-4">
             <p>Don’t have an account?</p>
             <Link to="/signup" className="text-primary ml-2">

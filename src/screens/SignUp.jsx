@@ -25,6 +25,7 @@ const SignUp = () => {
       email: e.target.email.value,
       password: e.target.password.value,
       name: e.target.name.value,
+      phoneNo: e.target.phoneNo.value,
     }
 
     dispatch(registerUser(payload)).then((res)=>{
@@ -65,6 +66,13 @@ const SignUp = () => {
             placeholder={"Enter Password"}
             id={"password"}
             name={"password"}
+          />
+          <InputField
+            label={"Phone Number*"}
+            type={"text"}
+            placeholder={"Phone Number"}
+            id={"phoneNo"}
+            name={"phoneNo"}
           />
 
           {/* <input
