@@ -21,6 +21,7 @@ import Meetings from "./screens/Meetings";
 import { getPlans } from "./redux/slice/plans/PlanAction";
 import StripePaymentElement from "./screens/StripePaymentElement";
 import { getAllFeatures } from "./redux/slice/feature/featureAction";
+import { save } from "./redux/reuseable";
 
 
 
@@ -57,6 +58,7 @@ export default function App() {
 
     if (socket && userInfo?._id) {
       socket.on('connect', () => {
+        save('socketId', socket.id);
         socket.emit('user-connected', { userName: userInfo.name, userId: userInfo._id, userEmail: userInfo.email })
       });
 
