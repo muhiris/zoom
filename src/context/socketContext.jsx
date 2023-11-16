@@ -2,8 +2,11 @@
 
 // SocketContext.js
 import { createContext, useContext, useEffect, useState } from 'react';
-import { socket } from '../socket/socket';
+// import { socket } from '../socket/socket';
 import { useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
+import axiosInstance from '../api/axios';
+import { get } from '../redux/reuseable';
 
 
 const SocketContext = createContext();
@@ -17,9 +20,16 @@ export function SocketProvider({ children }) {
   const { userInfo } = useSelector(state => state.user);
 
   useEffect(() => {
-    console.log('SocketProvider: userInfo', userInfo);
-    console.log('SocketProvider: socket.connected', socket.connected);
-    if(!userInfo?._id ) return;
+    
+    const socket = io(axiosInstance.defaults.baseURL, {
+      auth: async (cb) => {
+        cb({
+          token: await get("accessToken"),
+        });
+      },
+    });
+    
+    if(!userInfo?._id  ) return;
     console.log('SocketProvider: connecting...');
     const socketConnection = socket.connect();
     setSocketConnection(socketConnection);

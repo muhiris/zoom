@@ -364,11 +364,11 @@ function Call() {
   const handleSpeakerToggle = () => {
     try {
 
-      const audioTracks = localMediaStream.getAudioTracks();
-      if (audioTracks.length > 0) {
-        const audioTrack = audioTracks[0];
-        audioTrack.enabled = !audioTrack.enabled;
-      }
+      // const audioTracks = localMediaStream.getAudioTracks();
+      // if (audioTracks.length > 0) {
+      //   const audioTrack = audioTracks[0];
+      //   audioTrack.enabled = !audioTrack.enabled;
+      // }
       setSound(!sound);
     } catch (err) {
       console.log(err);
@@ -419,38 +419,29 @@ function Call() {
         setIsScreenSharing(true);
 
         // display media with microphone audio
-        const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const mediaStream = await navigator.mediaDevices.getDisplayMedia();
         // replace audio track in mediaStream with audio from microphone
         // const audioTrack = localMediaStream.getAudioTracks()[0];
         // mediaStream.addTrack(audioTrack);
+
         setLocalMediaStream(mediaStream);
-        // locaMediaRef.current = mediaStream;
+        locaMediaRef.current = mediaStream;
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
             sender.replaceTrack(mediaStream.getTracks()[0]);
           });
         });
       } else {
-
         setIsScreenSharing(false);
         setIsCameraOn(true);
-
-        // setLocalMediaStream(locaMediaRef.current);
-        // await startLocalMediaStream();
-
-        //put back the camera stream
-        setLocalMediaStream(locaMediaRef.current);
-
-
-
+        await startLocalMediaStream();
+        localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
+        locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
-            sender.replaceTrack(locaMediaRef.current.getTracks(mediaConstraints)[0]);
+            sender.replaceTrack(locaMediaRef.current.getTracks()[0]);
           });
         });
-
-
-
       }
 
 
@@ -489,7 +480,7 @@ function Call() {
         //* Once the Offer is created and set as the local description, the icecandidate event is fired
         remotePeers.current[userId].onicecandidate = (event) => {
           if (!event.candidate) { return; }
-          socket.emit('ice-candidate', { iceCandidate: event.candidate, userId });
+          socket.emit('ice-candidate', { iceCandidate: event.candidate, userId, meetId });
         }
 
         let offerMaking = false;
@@ -555,7 +546,7 @@ function Call() {
           const offerDescription = await peer.createOffer(sessionConstraints);
           if (offerDescription.type === "offer" && peer.signalingState === 'stable') {
             peer.setLocalDescription(offerDescription).then(() => {
-              socket.emit('offer', { offerDescription: peer.localDescription, otherUserId: userId, myName: userInfo.name, myUserId: userInfo._id });
+              socket.emit('offer', { offerDescription: peer.localDescription, otherUserId: userId, myName: userInfo.name, myUserId: userInfo._id, meetId });
             }, (err) => {
               console.log("Error in set local description: ", err);
             })
@@ -641,7 +632,7 @@ function Call() {
             //* Once the Offer is created and set as the local description, the icecandidate event is fired
             remotePeers.current[userId].onicecandidate = (event) => {
               if (!event.candidate) { return; };
-              socket.emit('ice-candidate', { iceCandidate: event.candidate, userId });
+              socket.emit('ice-candidate', { iceCandidate: event.candidate, userId, meetId });
             }
 
             locaMediaRef.current.getTracks().forEach((track) => {
@@ -702,7 +693,7 @@ function Call() {
                   //* also setting the local description with the answer (of the user who sent the offer in RTCPeerConnection object stored on our side fo that user)
                   await remotePeers.current[userId].setLocalDescription(answer)
                   //* sending the answer to the user who sent the offer
-                  socket.emit('answer', { answerDescription: answer, userId });
+                  socket.emit('answer', { answerDescription: answer, userId, meetId });
                 }
               },
               (err) => {
@@ -916,6 +907,10 @@ function Call() {
             toggleParticipants={() => { setSideBar(!sideBar) }}
             endCall={handleEndCall}
             hideControls={true}
+            style={{
+              borderWidth: 1,
+              borderColor: "white",
+            }}
           />
         </div>
         {
@@ -928,7 +923,10 @@ function Call() {
                 maxWidth: "100%",
               }}
               className=" bg-black ">
-              <RemotePeerStream key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
+              <RemotePeerStream style={{
+                borderWidth:1,
+                borderColor:"white",
+              }} sound={sound} key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
                 peerData[item]?.userId
               } />
             </div>
