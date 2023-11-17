@@ -23,6 +23,7 @@ import StripePaymentElement from "./screens/StripePaymentElement";
 import { getAllFeatures } from "./redux/slice/feature/featureAction";
 import { save } from "./redux/reuseable";
 
+var sound = new Audio("/sounds/notification.wav");
 
 
 
@@ -64,6 +65,8 @@ export default function App() {
 
       socket.on("message", ({ data, chatId }) => {
         console.log("message received: ", data);
+        sound.play();
+        console.log("chatId: ", data);
         dispatch(addMessage({ data: { messageData: data, chatId } }))
       });
 

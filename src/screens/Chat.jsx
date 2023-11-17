@@ -62,15 +62,17 @@ function formatAMPM(date) {
 // MESSAGES VIEW ===========================================
 
 const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, displayName, messageTextValue, chatId, participantId, loading, hasNextPage }) => {
-
     const messagesDivRef = React.useRef(null);
     const { userInfo } = useSelector(state => state.user);
     const dispatch = useDispatch();
     const socket = useSocket();
 
+    const [loaded, setLoaded] = React.useState(false);
+
+
     const handleMessageSend = () => {
         dispatch(addMessage({ data: { messageData: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text" }, chatId } }));
-        socket.emit("message", { data: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text", name: userInfo.name }, participantId: participantId, chatId: chatId })
+        socket.emit("message", { data: { senderId: userInfo._id, message: messageTextValue, time: new Date(), date: new Date(), type: "Text", name: userInfo.name }, participantId: participantId, chatId: chatId })
         clearText();
         setTimeout(() => {
             //scroll to bottom after sending message and adding it to the list
@@ -79,14 +81,35 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
 
     }
 
+
+
     useEffect(() => {
-        if (messagesDivRef.current) {
-            console.log("I am here INSIDE: ",chatId)
-            setTimeout(() => {
-                messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
-            }, 100);
+        if (loaded) {
+
+            if (messagesDivRef.current) {
+
+                console.log("scrollHeight: ", messagesDivRef.current.scrollHeight);
+                console.log("scrollTop: ", messagesDivRef.current.scrollTop);
+                console.log("clientHeight: ", messagesDivRef.current.clientHeight);
+
+                //check if the user is at the bottom of the chat or not
+                if (messagesDivRef.current.scrollHeight - messagesDivRef.current.scrollTop === messagesDivRef.current.clientHeight) {
+                    setTimeout(() => {
+                        messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+                    }, 100);
+                }
+            }
+
+
+        } else {
+            if (messagesDivRef.current) {
+                setTimeout(() => {
+                    messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+                    setLoaded(true);
+                }, 100);
+            }
         }
-    },[chatId]);
+    }, [data]);
 
     return (<div className='flex-1 flex flex-col gap-3 p-5 h-screen max-h-screen overflow-hidden relative'>
         <div className='flex items-center justify-between'>
