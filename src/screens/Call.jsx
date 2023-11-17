@@ -328,7 +328,7 @@ function Meet(props) {
   const destroyingMediaStream = () => {
 
     console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
-    locaMediaRef.current.getTracks()?.forEach(
+    locaMediaRef?.current?.getTracks()?.forEach(
       track => track.stop()
     );
     locaMediaRef.current = null;
@@ -336,7 +336,7 @@ function Meet(props) {
     console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
 
     
-    localMediaStream.getTracks()?.forEach(
+    localMediaStream?.getTracks()?.forEach(
       track => track.stop()
       );
       setLocalMediaStream(null);
@@ -580,7 +580,7 @@ function Meet(props) {
   const cleanupConnections = () => {
     try {
       // Close connections with all peers
-      Object.keys(remotePeers.current).forEach((userId) => {
+      Object.keys(remotePeers.current)?.forEach((userId) => {
         handlePeerDisconnect(userId);
       });
 
@@ -863,6 +863,7 @@ function Meet(props) {
     return () => {
 
       window.removeEventListener('popstate', () => {
+        console.log("POPSTATE EVENT FIRED");
         locaMediaRef?.getTracks()?.forEach(
           track => track.stop()
         );
