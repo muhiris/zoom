@@ -143,7 +143,7 @@ function Meet(props) {
   const [recording, setRecording] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [localMediaStream, setLocalMediaStream] = useState();
-  const locaMediaRef = useRef();
+  const locaMediaRef = useRef(null);
   let remotePeers = useRef({});
   const [seePeerList, setPeerList] = useState([]);
   let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
@@ -316,8 +316,8 @@ function Meet(props) {
         setIsCameraOn(true);
       }
 
-      setLocalMediaStream(mediaStream);
       locaMediaRef.current = mediaStream;
+      setLocalMediaStream(mediaStream);
 
     } catch (err) {
       console.log(err);
@@ -327,14 +327,14 @@ function Meet(props) {
 
   //DESTROY THE LOCAL MEDIA STREAM
   const destroyingMediaStream = () => {
-    localMediaStream?.getTracks()?.forEach(
-      track => track.stop()
-    );
     locaMediaRef.current?.getTracks()?.forEach(
       track => track.stop()
     );
-    setLocalMediaStream(null);
     locaMediaRef.current = null;
+    localMediaStream?.getTracks()?.forEach(
+      track => track.stop()
+    );
+    setLocalMediaStream(null);
   }
 
   const toggleActiveMicrophone = async (stream = undefined) => {
@@ -427,6 +427,9 @@ function Meet(props) {
         // mediaStream.addTrack(audioTrack);
 
         setLocalMediaStream(mediaStream);
+        locaMediaRef.current?.getTracks()?.forEach(
+          track => track.stop()
+        );
         locaMediaRef.current = mediaStream;
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
@@ -436,9 +439,13 @@ function Meet(props) {
       } else {
         setIsScreenSharing(false);
         setIsCameraOn(true);
+        locaMediaRef.current?.getTracks()?.forEach(
+          track => track.stop()
+        );
+        locaMediaRef.current = null;
         await startLocalMediaStream();
-        localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
-        locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
+        // localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
+        // locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
             sender.replaceTrack(locaMediaRef.current.getTracks()[0]);

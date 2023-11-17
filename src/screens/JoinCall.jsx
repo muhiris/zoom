@@ -10,6 +10,7 @@ import { toast } from 'react-toast';
 const JoinCall = (props) => {
 
     const [localMediaStream, setLocalMediaStream] = useState(null);
+    const localMediaStreamRef = useRef(null);
     const [camera, setCamera] = useState(true);
     const [microphone, setMicrophone] = useState(true);
     const [sound, setSound] = useState(true);
@@ -44,6 +45,7 @@ const JoinCall = (props) => {
                 setCamera(true);
             }
             setLocalMediaStream(mediaStream);
+            localMediaStreamRef.current = mediaStream;
         } catch (err) {
             console.log(err);
         }
@@ -140,6 +142,10 @@ const JoinCall = (props) => {
         startLocalMediaStram();
 
         window.addEventListener('popstate', ()=>{
+            localMediaStreamRef.current?.getTracks()?.forEach(
+                track => track.stop()
+            );
+            localMediaStreamRef.current = null;
             destroyingMediaStream();
         })
 
@@ -148,6 +154,11 @@ const JoinCall = (props) => {
             destroyingMediaStream();
             window.removeEventListener('popstate', ()=>{
                 console.log("I AM POPSTATE");
+                localMediaStream?.getTracks()?.forEach(
+                    track => track.stop()
+                
+                );
+                localMediaStreamRef.current = null;
                 destroyingMediaStream();
             })
         }
