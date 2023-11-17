@@ -115,8 +115,6 @@ const JoinCall = (props) => {
 
         if (props?.from === "Call") {
 
-            localMediaStream.getTracks().forEach(track => track.stop());
-            setLocalMediaStream(null);
             props.joinMeeting(payload, camera, microphone, sound)
 
         } else {
@@ -127,8 +125,6 @@ const JoinCall = (props) => {
                     if (res.payload.data.access) {
 
                         navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
-                        localMediaStream.getTracks().forEach(track => track.stop());
-                        setLocalMediaStream(null);
                     } else {
                         toast.error('You are not allowed to join this meeting');
                     }

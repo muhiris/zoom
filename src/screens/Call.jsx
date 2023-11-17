@@ -169,7 +169,6 @@ function Meet(props) {
       mediaSource: mediaSource,
       width: { ideal: 1280 },
       height: { ideal: 720 },
-
     }
   };
 
@@ -327,14 +326,21 @@ function Meet(props) {
 
   //DESTROY THE LOCAL MEDIA STREAM
   const destroyingMediaStream = () => {
-    locaMediaRef.current?.getTracks()?.forEach(
+
+    console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
+    locaMediaRef.current.getTracks()?.forEach(
       track => track.stop()
     );
     locaMediaRef.current = null;
-    localMediaStream?.getTracks()?.forEach(
+
+    console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
+
+    
+    localMediaStream.getTracks()?.forEach(
       track => track.stop()
-    );
-    setLocalMediaStream(null);
+      );
+      setLocalMediaStream(null);
+      
   }
 
   const toggleActiveMicrophone = async (stream = undefined) => {
@@ -586,6 +592,8 @@ function Meet(props) {
 
       // Navigate to a different screen or perform any necessary cleanup
       navigate('/');
+      window.location.reload();
+
     } catch (err) {
       console.log("Error in cleanupConnections: ", err);
     }
@@ -844,29 +852,24 @@ function Meet(props) {
         })
       }
     }
-    // else {
-    //   if (location.pathname.split('/')[1] === "call") {
-
-    //     const payload = {
-    //       meetId: location.pathname.split('/')[2],
-    //       passcode: e.target.passCode.value || null,
-    //       type: 'internal',
-    //   }
-
-    //     //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
-    //     dispatch(joinMeet(payload)).then((res) => {
-    //       if (joinMeet.fulfilled.match(res)) {
-    //         if (res.payload.data.access) {
-    //           navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
-    //         } else {
-    //           toast.error('You are not allowed to join this meeting');
-    //         }
-    //       }
-    //     })
-    //   }
-    // }
+    window.addEventListener('popstate', () => {
+      locaMediaRef.current?.getTracks()?.forEach(
+        track => track.stop()
+      );
+      locaMediaRef.current = null;
+      cleanupConnections();
+    })
 
     return () => {
+
+      window.removeEventListener('popstate', () => {
+        locaMediaRef?.getTracks()?.forEach(
+          track => track.stop()
+        );
+        locaMediaRef.current = null;
+        cleanupConnections();
+      })
+
       if (socket) {
         socket.off("inform-others-about-me");
         socket.off("offer");
@@ -1032,7 +1035,7 @@ const Call = () => {
     audio: state?.audio || null,
     hostId: state?.hostId || null
   });
-  
+
 
 
   const handleJoinMeeting = (payload, camera, microphone, sound) => {
@@ -1058,7 +1061,7 @@ const Call = () => {
   useEffect(() => {
 
     const accessToken = localStorage.getItem('accessToken');
-    if(!accessToken){
+    if (!accessToken) {
       navigate('/login');
     }
 
