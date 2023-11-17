@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AiOutlineEyeInvisible, AiOutlineEye } from "react-icons/ai";
-function InputField({ label, type, id, placeholder, name }) {
+function InputField({ label, type, id, placeholder, name, defaultValue, disabled=false }) {
   let labelHTML = label?.toLowerCase();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +48,8 @@ function InputField({ label, type, id, placeholder, name }) {
           <input
             type={type}
             id={id}
+            disabled={disabled}
+            defaultValue={defaultValue||""}
             name={name}
             className="px-4 lg:pl-4 lg:pr-24 py-2 outline-none text-gray-800 border border-gray-300 rounded-lg focus:border-primary"
             placeholder={placeholder}
