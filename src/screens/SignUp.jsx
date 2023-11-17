@@ -11,6 +11,7 @@ import Button from "../components/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../redux/slice/user/userAction";
 import { toast } from "react-toast";
+import axiosInstance from "../api/axios";
 //functional component
 const SignUp = () => {
 
@@ -18,6 +19,10 @@ const SignUp = () => {
   const navigate = useNavigate();
   const {loading:authLoading, userInfo, error:authError} = useSelector(state => state.user);
 
+
+  const handleGoogleSignIn = () => {
+    window.location.href = `${axiosInstance.defaults.baseURL}/auth/google-web`;
+  }
 
   const handleLocalSignUp = (e) => {
     e.preventDefault();
@@ -82,7 +87,7 @@ const SignUp = () => {
             className="mt-6 bg-primary text-white px-4 py-2 rounded-md"
           /> */}
           <Button text={"Sign Up"} type={"Submit"} loading={authLoading} style={{marginTop:24}} />
-          <div className="flex-center mt-4 border  border-gray-300 rounded-md">
+          <div onClick={handleGoogleSignIn} className="flex-center mt-4 border  border-gray-300 rounded-md">
             <img src={google} alt="" />
             <input
               type="submit"
