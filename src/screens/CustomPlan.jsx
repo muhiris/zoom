@@ -16,13 +16,17 @@ function CustomPlan() {
   const { loading: featuresLoading, features, error: featuresError, success: featuresSuccess } = useSelector(state => state.feature);
   const { loading: customPlanLoading, customPlan, error: customPlanError, success: customPlanSuccess } = useSelector(state => state.customPlan);
   const { loading: stripeLoading, error: stripeError, success: stripeSuccess } = useSelector(state => state.stripe);
+  const { userInfo } = useSelector(state => state.user);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
 
 
 
   const handleCreatePlan = () => {
 
-    console.log(selectedFeatures);
+    if(!userInfo?._id){
+      navigate("/login");
+      return;
+    }
 
     if (selectedFeatures.length === 0) {
       toast.error("Please select atleast one feature");

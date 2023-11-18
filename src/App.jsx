@@ -109,16 +109,17 @@ export default function App() {
         dispatch(getAllChat({ limit: 30 }));
       }
 
-      if (plans.length == 0 && !plansLoading) {
-        dispatch(getPlans());
-      }
-
-      if(features.length ==0 && !featuresLoading){
-        dispatch(getAllFeatures())
-      }
-
+      
+    }
+    
+    if (plans.length == 0 && !plansLoading) {
+      dispatch(getPlans());
     }
 
+    if(features.length ==0 && !featuresLoading){
+      dispatch(getAllFeatures())
+    }
+    
   }, [userInfo?._id])
 
 
