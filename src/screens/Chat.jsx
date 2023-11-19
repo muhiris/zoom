@@ -74,13 +74,19 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
         dispatch(addMessage({ data: { messageData: { senderId: userInfo._id, message: messageTextValue, time: new Date().toLocaleString(), date: new Date().toLocaleString(), type: "Text" }, chatId } }));
         socket.emit("message", { data: { senderId: userInfo._id, message: messageTextValue, time: new Date(), date: new Date(), type: "Text", name: userInfo.name }, participantId: participantId, chatId: chatId })
         clearText();
-        // setTimeout(() => {
-        //     //scroll to bottom after sending message and adding it to the list
-        //     messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
-        // }, 100);
+        setTimeout(() => {
+            //scroll to bottom after sending message and adding it to the list
+            messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
+        }, 100);
 
     }
 
+
+    useEffect(() => {
+
+        setLoaded(false);
+
+    }, [chatId]);
 
 
     useEffect(() => {

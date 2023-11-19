@@ -115,7 +115,7 @@ const JoinCall = (props) => {
 
         if (props?.from === "Call") {
 
-            props.joinMeeting(payload, camera, microphone, sound)
+            props.joinMeeting({...payload,name:e.target.name.value}, camera, microphone, sound)
 
         } else {
 

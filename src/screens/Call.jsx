@@ -450,8 +450,8 @@ function Meet(props) {
         );
         locaMediaRef.current = null;
         await startLocalMediaStream();
-        // localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
-        // locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
+        localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
+        locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
             sender.replaceTrack(locaMediaRef.current.getTracks()[0]);
