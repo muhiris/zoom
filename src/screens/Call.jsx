@@ -19,6 +19,7 @@ import { BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill, BsPeopleFill } from
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
 import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
 import { joinMeet } from "../redux/slice/meet/meetAction";
+import JoinCall from "./JoinCall";
 
 
 
@@ -121,17 +122,17 @@ const ParticipantDrawer = ({ participants, isHost, meetId }) => {
 
 
 
-function Call() {
+function Meet(props) {
 
   const socket = useSocket();
 
   // STATES
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
   let { loading, error, userInfo, success } = useSelector((state) => state.user);
-  const { state } = useLocation();
-  const { meetId, name, video, audio, hostId } = state;
+  // const { state } = useLocation();
+  const { meetId, name, video, audio, hostId } = props.state;
   const [sound, setSound] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(video);
   const cameraRef = useRef(video);
@@ -142,7 +143,7 @@ function Call() {
   const [recording, setRecording] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [localMediaStream, setLocalMediaStream] = useState();
-  const locaMediaRef = useRef();
+  const locaMediaRef = useRef(null);
   let remotePeers = useRef({});
   const [seePeerList, setPeerList] = useState([]);
   let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
@@ -168,7 +169,6 @@ function Call() {
       mediaSource: mediaSource,
       width: { ideal: 1280 },
       height: { ideal: 720 },
-
     }
   };
 
@@ -315,8 +315,8 @@ function Call() {
         setIsCameraOn(true);
       }
 
-      setLocalMediaStream(mediaStream);
       locaMediaRef.current = mediaStream;
+      setLocalMediaStream(mediaStream);
 
     } catch (err) {
       console.log(err);
@@ -326,14 +326,21 @@ function Call() {
 
   //DESTROY THE LOCAL MEDIA STREAM
   const destroyingMediaStream = () => {
+
+    console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
+    locaMediaRef?.current?.getTracks()?.forEach(
+      track => track.stop()
+    );
+    locaMediaRef.current = null;
+
+    console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
+
+    
     localMediaStream?.getTracks()?.forEach(
       track => track.stop()
-    );
-    locaMediaRef.current?.getTracks()?.forEach(
-      track => track.stop()
-    );
-    setLocalMediaStream(null);
-    locaMediaRef.current = null;
+      );
+      setLocalMediaStream(null);
+      
   }
 
   const toggleActiveMicrophone = async (stream = undefined) => {
@@ -343,6 +350,7 @@ function Call() {
         let audioTrack;
         if (stream) {
           audioTrack = stream.getAudioTracks()[0];
+          console.log("AUDIO TRACK: ", audioTrack);
         } else {
           audioTrack = localMediaStream.getAudioTracks()[0];
           console.log("AUDIO TRACK: ", audioTrack);
@@ -425,6 +433,9 @@ function Call() {
         // mediaStream.addTrack(audioTrack);
 
         setLocalMediaStream(mediaStream);
+        locaMediaRef.current?.getTracks()?.forEach(
+          track => track.stop()
+        );
         locaMediaRef.current = mediaStream;
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
@@ -434,6 +445,10 @@ function Call() {
       } else {
         setIsScreenSharing(false);
         setIsCameraOn(true);
+        locaMediaRef.current?.getTracks()?.forEach(
+          track => track.stop()
+        );
+        locaMediaRef.current = null;
         await startLocalMediaStream();
         localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
         locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
@@ -565,7 +580,7 @@ function Call() {
   const cleanupConnections = () => {
     try {
       // Close connections with all peers
-      Object.keys(remotePeers.current).forEach((userId) => {
+      Object.keys(remotePeers.current)?.forEach((userId) => {
         handlePeerDisconnect(userId);
       });
 
@@ -577,6 +592,8 @@ function Call() {
 
       // Navigate to a different screen or perform any necessary cleanup
       navigate('/');
+      window.location.reload();
+
     } catch (err) {
       console.log("Error in cleanupConnections: ", err);
     }
@@ -835,29 +852,25 @@ function Call() {
         })
       }
     }
-    // else {
-    //   if (location.pathname.split('/')[1] === "call") {
-
-    //     const payload = {
-    //       meetId: location.pathname.split('/')[2],
-    //       passcode: e.target.passCode.value || null,
-    //       type: 'internal',
-    //   }
-
-    //     //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
-    //     dispatch(joinMeet(payload)).then((res) => {
-    //       if (joinMeet.fulfilled.match(res)) {
-    //         if (res.payload.data.access) {
-    //           navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
-    //         } else {
-    //           toast.error('You are not allowed to join this meeting');
-    //         }
-    //       }
-    //     })
-    //   }
-    // }
+    window.addEventListener('popstate', () => {
+      locaMediaRef.current?.getTracks()?.forEach(
+        track => track.stop()
+      );
+      locaMediaRef.current = null;
+      cleanupConnections();
+    })
 
     return () => {
+
+      window.removeEventListener('popstate', () => {
+        console.log("POPSTATE EVENT FIRED");
+        locaMediaRef?.getTracks()?.forEach(
+          track => track.stop()
+        );
+        locaMediaRef.current = null;
+        cleanupConnections();
+      })
+
       if (socket) {
         socket.off("inform-others-about-me");
         socket.off("offer");
@@ -880,6 +893,7 @@ function Call() {
 
 
   return (
+
     <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden relative bg-black">
 
       <div className={`flex-1 overflow-hidden grid ${seePeerList.length <= 1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
@@ -924,8 +938,8 @@ function Call() {
               }}
               className=" bg-black ">
               <RemotePeerStream style={{
-                borderWidth:1,
-                borderColor:"white",
+                borderWidth: 1,
+                borderColor: "white",
               }} sound={sound} key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
                 peerData[item]?.userId
               } />
@@ -1007,4 +1021,67 @@ function Call() {
   );
 }
 
+
+const Call = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  let { loading, error, userInfo, success } = useSelector((state) => state.user);
+  const { state } = useLocation();
+  // const { meetId, name, video, audio, hostId } = state;
+  const [data, setData] = useState({
+    meetId: state?.meetId || null,
+    name: state?.name || null,
+    video: state?.video || null,
+    audio: state?.audio || null,
+    hostId: state?.hostId || null
+  });
+
+
+
+  const handleJoinMeeting = (payload, camera, microphone, sound) => {
+    //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
+    dispatch(joinMeet(payload)).then((res) => {
+      if (joinMeet.fulfilled.match(res)) {
+        if (res.payload.data.access) {
+          // navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
+          setData({
+            meetId: res?.payload?.data?.meet?._id,
+            name: payload.name,
+            video: camera,
+            audio: microphone,
+            hostId: res?.payload?.data?.meet?.host
+          })
+        } else {
+          toast.error('You are not allowed to join this meeting');
+        }
+      }
+    })
+  }
+
+  useEffect(() => {
+
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      navigate('/login');
+    }
+
+  }, [userInfo?._id])
+
+  return (
+
+    data?.meetId ?
+      <Meet state={data} />
+      :
+      <JoinCall from={"Call"} joinMeeting={handleJoinMeeting} meetId={location.pathname.split('/')[2]} />
+
+  )
+
+}
+
+
+
 export default Call;
+
+
+

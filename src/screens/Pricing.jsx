@@ -17,9 +17,14 @@ function Pricing() {
   const dispatch = useDispatch();
   const { loading: plansLoading, plans, error: plansError, success: plansSuccess } = useSelector(state => state.plan);
   const { loading: stripeLoading, error: stripeError, success: stripeSuccess } = useSelector(state => state.stripe);
+  const { userInfo } = useSelector(state => state.user);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   const handleSubscribe = (plan) => {
+    if(!userInfo?._id){
+      navigate("/login");
+      return;
+    }
     setSelectedPlan(plan._id);
     dispatch(createPaymentIntent({ planId: plan?._id })).then((res) => {
       if (createPaymentIntent.fulfilled.match(res)) {

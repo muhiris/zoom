@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import MyStreamView from '../components/MyStreamView';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
@@ -7,9 +7,10 @@ import { joinMeet } from '../redux/slice/meet/meetAction';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toast';
 
-const JoinCall = () => {
+const JoinCall = (props) => {
 
     const [localMediaStream, setLocalMediaStream] = useState(null);
+    const localMediaStreamRef = useRef(null);
     const [camera, setCamera] = useState(true);
     const [microphone, setMicrophone] = useState(true);
     const [sound, setSound] = useState(true);
@@ -44,6 +45,7 @@ const JoinCall = () => {
                 setCamera(true);
             }
             setLocalMediaStream(mediaStream);
+            localMediaStreamRef.current = mediaStream;
         } catch (err) {
             console.log(err);
         }
@@ -51,10 +53,13 @@ const JoinCall = () => {
 
     //DESTROY THE LOCAL MEDIA STREAM
     const destroyingMediaStream = () => {
+        
         localMediaStream?.getTracks()?.forEach(
             track => track.stop()
+        
         );
-    
+
+
         setLocalMediaStream(null);
     }
 
@@ -86,17 +91,17 @@ const JoinCall = () => {
 
     const handleSpeakerToggle = () => {
         try {
-    
-          const audioTracks = localMediaStream.getAudioTracks();
-          if (audioTracks.length > 0) {
-            const audioTrack = audioTracks[0];
-            audioTrack.enabled = !audioTrack.enabled;
-          }
-          setSound(!sound);
+
+            const audioTracks = localMediaStream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                const audioTrack = audioTracks[0];
+                audioTrack.enabled = !audioTrack.enabled;
+            }
+            setSound(!sound);
         } catch (err) {
-          console.log(err);
+            console.log(err);
         }
-      }
+    }
 
 
     const handleJoinMeeting = (e) => {
@@ -108,50 +113,66 @@ const JoinCall = () => {
             type: 'internal',
         }
 
-        //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
-        dispatch(joinMeet(payload)).then((res) => {
-            if (joinMeet.fulfilled.match(res)) {
-                if (res.payload.data.access) {
-                    navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId:res?.payload?.data?.meet?.host } });
-                } else {
-                    toast.error('You are not allowed to join this meeting');
+        if (props?.from === "Call") {
+
+            props.joinMeeting({...payload,name:e.target.name.value}, camera, microphone, sound)
+
+        } else {
+
+            //* Type is set Internal here because we are joining a meeting by id so doesnot matter if it was a scheduled one or not
+            dispatch(joinMeet(payload)).then((res) => {
+                if (joinMeet.fulfilled.match(res)) {
+                    if (res.payload.data.access) {
+
+                        navigate(`/call/${res?.payload?.data?.meet?._id}`, { state: { video: camera, audio: microphone, meetId: payload.meetId, name: e.target.name.value, hostId: res?.payload?.data?.meet?.host } });
+                    } else {
+                        toast.error('You are not allowed to join this meeting');
+                    }
                 }
-            }
-        })
+            })
+        }
     }
 
 
     useEffect(() => {
         startLocalMediaStram();
-        window.addEventListener('beforeunload', () => {
-            // This function will run when the page is being unloaded (e.g., when reloading or navigating away).
-            destroyingMediaStream();
-          });
 
-        // document.addEventListener('popstate', handlePopState);
+        window.addEventListener('popstate', ()=>{
+            localMediaStreamRef.current?.getTracks()?.forEach(
+                track => track.stop()
+            );
+            localMediaStreamRef.current = null;
+            destroyingMediaStream();
+        })
+
+
         return () => {
             destroyingMediaStream();
-            window.removeEventListener('beforeunload', () => {
-                // Remove the beforeunload event listener when the component is unmounted.
-            });
-            
+            window.removeEventListener('popstate', ()=>{
+                console.log("I AM POPSTATE");
+                localMediaStream?.getTracks()?.forEach(
+                    track => track.stop()
+                
+                );
+                localMediaStreamRef.current = null;
+                destroyingMediaStream();
+            })
         }
     }, [])
-
 
     return (
         <div className='flex flex-1 flex-col md:flex-row  gap-10 p-20'>
             <div>
-                <MyStreamView 
-                style={{flex:1}} 
-                joinCallScreen={true} 
-                src={localMediaStream} 
-                microphone={microphone} 
-                toggleMicrophone={toggleActiveMicrophone} 
-                toggleCamera={toggleCamera} 
-                camera={camera}
-                speaker={sound}
-                toggleSpeaker={handleSpeakerToggle}
+                <MyStreamView
+                    style={{ flex: 1 }}
+                    joinCallScreen={true}
+                    src={localMediaStream}
+                    microphone={microphone}
+                    toggleMicrophone={toggleActiveMicrophone}
+                    toggleCamera={toggleCamera}
+                    camera={camera}
+                    speaker={sound}
+                    toggleSpeaker={handleSpeakerToggle}
                 />
             </div>
             <div className='flex flex-col py-5'>
@@ -163,6 +184,8 @@ const JoinCall = () => {
                             type='text'
                             placeholder='Enter Meeting ID'
                             name={"meetingId"}
+                            disabled={props?.meetId ? true : false}
+                            defaultValue={props?.meetId}
                         />
                     </div>
                     <div className='flex flex-col'>
