@@ -90,7 +90,6 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
 
 
     useEffect(() => {
-        console.log("LOaded: ", loaded);
         if (loaded) {
 
             if (messagesDivRef.current) {
@@ -121,9 +120,7 @@ const MessagesDisplay = ({ data, onTextChange, send, clearText, displayAvatar, d
                         messagesDivRef.current.scrollTop = messagesDivRef.current.scrollHeight;
                         setLoaded(true);
                         setPreviousHeight(messagesDivRef.current.scrollHeight);
-                        console.log("scrollHeight: ", messagesDivRef.current.scrollHeight);
-                        console.log("scrollTop: ", messagesDivRef.current.scrollTop);
-                        console.log("clientHeight: ", messagesDivRef.current.clientHeight);
+
                     }, 100);
                 }
             }
@@ -224,6 +221,7 @@ const Chat = () => {
         setSelectedChat({ id, name });
     }
 
+    //TODO: load more chats
     const chatsLoadMore = (cursor) => {
         if (chatsHasNextPage && !chatsLoading) {
             dispatch(getAllChat({ cursor, limit: 30 }))

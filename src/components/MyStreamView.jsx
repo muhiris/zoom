@@ -10,9 +10,7 @@ const MyStreamView = (props) => {
     const videoRef = useRef(null);
 
     useEffect(() => {
-        console.log("I AM USEEFFECT");
         if (props?.src) {
-            console.log("I AM RUNNING");
             videoRef.current.srcObject = props.src;
             videoRef.current.style.transform = 'scaleX(-1)';
 

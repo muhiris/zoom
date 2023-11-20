@@ -90,7 +90,7 @@ const SignUp = () => {
           <div onClick={handleGoogleSignIn} className="flex-center mt-4 border  border-gray-300 rounded-md">
             <img src={google} alt="" />
             <input
-              type="submit"
+              type="button"
               id="button"
               value="Sign In with Google"
               className="px-4 py-2 text-black"
