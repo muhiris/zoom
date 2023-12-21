@@ -22,7 +22,8 @@ import { joinMeet } from "../redux/slice/meet/meetAction";
 import JoinCall from "./JoinCall";
 
 
-
+// ==========================================================================================================================================================//
+// ============================================================ LIST ITEM COMPONENT FOR PARTICIPANTS ========================================================//
 const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) => {
 
   const socket = useSocket();
@@ -69,7 +70,13 @@ const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) =
   )
 }
 
+// ===================================================================================================================================================
+// ===================================================================================================================================================
 
+
+
+// ==========================================================================================================================================================//
+// ============================================================ REMOTE PEER COMPONENT FOR PARTICIPANTS ========================================================//
 const ParticipantDrawer = ({ participants, isHost, meetId }) => {
   const socket = useSocket();
   const { loading, chats } = useSelector(state => state.chat);
@@ -119,42 +126,62 @@ const ParticipantDrawer = ({ participants, isHost, meetId }) => {
 
 }
 
+// ===================================================================================================================================================
+// ===================================================================================================================================================
+
 
 
 
 function Meet(props) {
 
+  // ==========================================================================================================================================================//
+
+  // get the socket instance
   const socket = useSocket();
 
-  // STATES
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // const location = useLocation();
-  let { loading, error, userInfo, success } = useSelector((state) => state.user);
-  // const { state } = useLocation();
   const { meetId, name, video, audio, hostId } = props.state;
+
+  // selectors
+  let { loading, error, userInfo, success } = useSelector((state) => state.user);
+
+  // custom hooks
+  let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
+
+  // managing camera and audio controls
   const [sound, setSound] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(video);
+
+  // managing camera
   const cameraRef = useRef(video);
   const [facingMode, setFacingMode] = useState('user');
   const [mediaSource, setMediaSource] = useState('camera');
+
+  // managing audio
   const [isMuted, setIsMuted] = useState(!audio);
   const isMutedRef = useRef(!audio);
-  const [recording, setRecording] = useState(false);
+
+  // managing screen sharing
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // stream references for local and display media
   const [localMediaStream, setLocalMediaStream] = useState();
   const locaMediaRef = useRef(null);
+  const displayMediaRef = useRef(null);
+
+  // managing peer connections
   let remotePeers = useRef({});
   const [seePeerList, setPeerList] = useState([]);
-  let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
-  const remotePeersViewRef = useRef();
-  const [sideBar, setSideBar] = useState(false);
 
+  // managing sidebar
+  const [sideBar, setSideBar] = useState(false);
 
   //for host controls
   const mutedByHost = useRef(false);
   const videoPausedByHost = useRef(false);
 
+  //=========================================================================================================================================================//
 
 
   // WEBRTC CONSTRAINTS
@@ -162,11 +189,11 @@ function Meet(props) {
   let isFrontCamera = true;
   let cameraCount = 0;
   let mediaConstraints = {
-    audio: { echoCancellation: true },
+    audio: { echoCancellation: true, suppressLocalAudioPlayback: true, noiseSuppression: true, sampleRate: 44100 },
     video: {
       frameRate: 30,
-      facingMode: facingMode,
-      mediaSource: mediaSource,
+      facingMode: 'user',
+      // mediaSource: 'camera',
       width: { ideal: 1280 },
       height: { ideal: 720 },
     }
@@ -215,8 +242,7 @@ function Meet(props) {
   }, [peerData]);
 
 
-
-
+  // DEVICE CHANGE HANDLER INITIALIZATION
   useEffect(() => {
     let hasDeviceChangeOccurred = false;
 
@@ -298,28 +324,84 @@ function Meet(props) {
 
 
 
+  const setMediaConstraints = async () => {
+    try {
+
+      navigator.mediaDevices.enumerateDevices()
+        .then(devices => {
+          const hasCamera = devices.some(device => device.kind === 'videoinput');
+
+          if (!hasCamera) {
+            // If the user doesn't have a camera, adjust constraints
+            mediaConstraints.video = false;  // Disable video for users without a camera
+          }
+
+          const hasMicrophone = devices.some(device => device.kind === 'audioinput');
+
+          if (!hasMicrophone) {
+            // If the user doesn't have a microphone, adjust constraints
+            mediaConstraints.audio = false;  // Disable audio for users without a microphone
+          }
+
+        })
+        .catch(error => {
+          console.error('Error enumerating media devices:', error);
+        });
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+
 
   //=========================================================================================================================================================//
   //========================================================================== LOCAL STREAM HANDLERS ========================================================//
 
+
+  const applyStream = (mediaStream) => {
+    if (isVoiceOnly) {
+      let videoTrack = mediaStream.getVideoTracks()[0];
+      videoTrack.enabled = false;
+      setIsCameraOn(false);
+    }
+    else {
+      setIsCameraOn(true);
+    }
+
+    locaMediaRef.current = mediaStream;
+    setLocalMediaStream(mediaStream);
+  }
+
   // START THE LOCAL MEDIA STREAM
   const startLocalMediaStream = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      if (isVoiceOnly) {
-        let videoTrack = mediaStream.getVideoTracks()[0];
-        videoTrack.enabled = false;
-        setIsCameraOn(false);
-      }
-      else {
-        setIsCameraOn(true);
-      }
+      await setMediaConstraints();
+      navigator.mediaDevices.getUserMedia(mediaConstraints).then((mediaStream) => {
+        applyStream(mediaStream);
+      }).catch((error) => {
+        console.error('Error accessing media devices:', error);
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
 
-      locaMediaRef.current = mediaStream;
-      setLocalMediaStream(mediaStream);
+          if (mediaConstraints.video) {
+            // If video is requested, continue without video
+            delete mediaConstraints.video;
+          }
 
-    } catch (err) {
-      console.log(err);
+          navigator.mediaDevices.getUserMedia(mediaConstraints)
+            .then(stream => {
+              applyStream(stream);
+            })
+            .catch(innerError => {
+              // Handle the second error
+              alert('You have denied access to your media devices. Please allow access to your microphone atleast to join the call.');
+            });
+        }
+      });
+
+
+    } catch (error) {
+      console.error('Error accessing media devices:', error);
     }
 
   }
@@ -335,12 +417,13 @@ function Meet(props) {
 
     console.log("DESTROYING MEDIA STREAM: ", locaMediaRef.current);
 
-    
-    localMediaStream?.getTracks()?.forEach(
-      track => track.stop()
-      );
-      setLocalMediaStream(null);
-      
+
+    // localMediaStream?.getTracks()?.forEach(
+    //   track => track.stop()
+    // );
+    // setLocalMediaStream(null);
+    setLocalMediaStream(null);
+
   }
 
   const toggleActiveMicrophone = async (stream = undefined) => {
@@ -423,40 +506,98 @@ function Meet(props) {
 
       if (videoPausedByHost.current) { return; }
       if (!isScreenSharing) {
+
+
+
+        // display media with microphone audio
+        displayMediaRef.current = await navigator.mediaDevices.getDisplayMedia();
+
         setIsCameraOn(false);
         setIsScreenSharing(true);
 
-        // display media with microphone audio
-        const mediaStream = await navigator.mediaDevices.getDisplayMedia();
-        // replace audio track in mediaStream with audio from microphone
-        // const audioTrack = localMediaStream.getAudioTracks()[0];
-        // mediaStream.addTrack(audioTrack);
+        //merge audio tracks form display media and local media
+        const audioTracks = locaMediaRef.current.getAudioTracks();
+        if (audioTracks.length > 0) {
+          displayMediaRef.current.addTrack(audioTracks[0]);
+        }
 
-        setLocalMediaStream(mediaStream);
-        locaMediaRef.current?.getTracks()?.forEach(
-          track => track.stop()
-        );
-        locaMediaRef.current = mediaStream;
+        setLocalMediaStream(displayMediaRef.current);
+
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
-            sender.replaceTrack(mediaStream.getTracks()[0]);
+
+            //replace video track in peer connection with video from display media
+            if (sender.track.kind === 'video') {
+              sender.replaceTrack(displayMediaRef.current.getVideoTracks()[0]);
+            }
+
+          });
+
+        });
+
+        //Listen for stop screen sharing event
+        displayMediaRef.current.getVideoTracks()[0].addEventListener('ended', () => {
+          setIsScreenSharing(false);
+          setIsCameraOn(true);
+          
+
+          
+          //remove audio track from display media
+          displayMediaRef.current.removeTrack(displayMediaRef.current.getAudioTracks()[0]);
+          displayMediaRef.current.getTracks().forEach((track) =>{
+            //if track is not audio track
+            if(track.kind !== 'audio'){
+              track.stop();
+            }
+          });
+          displayMediaRef.current = null;
+
+          setLocalMediaStream(locaMediaRef.current);
+
+          Object.keys(remotePeers.current).forEach((userId) => {
+            remotePeers.current[userId].getSenders().forEach((sender) => {
+
+              //replace video track in peer connection with video from display media
+              if (sender.track.kind === 'video') {
+                sender.replaceTrack(locaMediaRef.current.getVideoTracks()[0]);
+              }
+
+            });
+
           });
         });
+
+
       } else {
         setIsScreenSharing(false);
         setIsCameraOn(true);
-        locaMediaRef.current?.getTracks()?.forEach(
-          track => track.stop()
-        );
-        locaMediaRef.current = null;
-        await startLocalMediaStream();
-        localMediaStream.removeTrack(localMediaStream.getTracks()[0]);
-        locaMediaRef.current.removeTrack(locaMediaRef.current.getTracks()[0]);
+
+        //remove audio track from display media
+        displayMediaRef.current.removeTrack(displayMediaRef.current.getAudioTracks()[0]);
+        displayMediaRef.current.getTracks().forEach((track) =>{
+          //if track is not audio track
+          if(track.kind !== 'audio'){
+            track.stop();
+          }
+        });
+        displayMediaRef.current = null;
+
+        setLocalMediaStream(locaMediaRef.current);
+
         Object.keys(remotePeers.current).forEach((userId) => {
           remotePeers.current[userId].getSenders().forEach((sender) => {
-            sender.replaceTrack(locaMediaRef.current.getTracks()[0]);
+
+            //replace video track in peer connection with video from display media
+            if (sender.track.kind === 'video') {
+              sender.replaceTrack(locaMediaRef.current.getVideoTracks()[0]);
+            }
+
           });
+
         });
+
+
+
       }
 
 
@@ -592,7 +733,7 @@ function Meet(props) {
 
       // Navigate to a different screen or perform any necessary cleanup
       navigate('/');
-      window.location.reload();
+      // window.location.reload();
 
     } catch (err) {
       console.log("Error in cleanupConnections: ", err);
@@ -652,6 +793,7 @@ function Meet(props) {
               socket.emit('ice-candidate', { iceCandidate: event.candidate, userId, meetId });
             }
 
+            console.log("Local Media Ref: ", locaMediaRef.current);
             locaMediaRef.current.getTracks().forEach((track) => {
               remotePeers.current[userId].addTrack(track, locaMediaRef.current);
             });
@@ -928,8 +1070,9 @@ function Meet(props) {
           />
         </div>
         {
-          seePeerList.map((item) =>
+          seePeerList.map((item, index) =>
             <div
+              key={index.toString()}
               style={{
                 height: "100%",
                 minHeight: (window.innerHeight * 0.9) / 2,
