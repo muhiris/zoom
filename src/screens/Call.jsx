@@ -20,6 +20,9 @@ import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
 import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
 import { joinMeet } from "../redux/slice/meet/meetAction";
 import JoinCall from "./JoinCall";
+import InMeetMessages from "../components/InMeetMessages";
+import { MdChat } from "react-icons/md";
+
 
 
 // ==========================================================================================================================================================//
@@ -77,7 +80,7 @@ const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) =
 
 // ==========================================================================================================================================================//
 // ============================================================ REMOTE PEER COMPONENT FOR PARTICIPANTS ========================================================//
-const ParticipantDrawer = ({ participants, isHost, meetId }) => {
+const ParticipantDrawer = ({ participants, isHost, meetId, style }) => {
   const socket = useSocket();
   const { loading, chats } = useSelector(state => state.chat);
   const { userInfo } = useSelector(state => state.user);
@@ -103,7 +106,7 @@ const ParticipantDrawer = ({ participants, isHost, meetId }) => {
 
 
   return (
-    <div className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
+    <div style={style} className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
       <p className="text-lg font-bold text-center">Participants</p>
       {isHost && <div className="flex flex-row items-center justify-center gap-3">
         <Button2 onClick={() => handleMuteAll()} style={{ flex: 1 }} text={allMuted ? "Unmute All" : "Mute All"} />
@@ -176,10 +179,16 @@ function Meet(props) {
 
   // managing sidebar
   const [sideBar, setSideBar] = useState(false);
+  const [sideBarShow, setSideBarShow] = useState(null);
+
+  // managing chat
+  const [messages, setMessages] = useState([]);
 
   //for host controls
   const mutedByHost = useRef(false);
   const videoPausedByHost = useRef(false);
+
+
 
   //=========================================================================================================================================================//
 
@@ -446,7 +455,7 @@ function Meet(props) {
       }
     } catch (err) {
       console.log(err);
-    };
+    }
   }
 
 
@@ -497,7 +506,7 @@ function Meet(props) {
       }
     } catch (err) {
       console.log(err);
-    };
+    }
 
   }
 
@@ -539,14 +548,14 @@ function Meet(props) {
         displayMediaRef.current.getVideoTracks()[0].addEventListener('ended', () => {
           setIsScreenSharing(false);
           setIsCameraOn(true);
-          
 
-          
+
+
           //remove audio track from display media
           displayMediaRef.current.removeTrack(displayMediaRef.current.getAudioTracks()[0]);
-          displayMediaRef.current.getTracks().forEach((track) =>{
+          displayMediaRef.current.getTracks().forEach((track) => {
             //if track is not audio track
-            if(track.kind !== 'audio'){
+            if (track.kind !== 'audio') {
               track.stop();
             }
           });
@@ -574,9 +583,9 @@ function Meet(props) {
 
         //remove audio track from display media
         displayMediaRef.current.removeTrack(displayMediaRef.current.getAudioTracks()[0]);
-        displayMediaRef.current.getTracks().forEach((track) =>{
+        displayMediaRef.current.getTracks().forEach((track) => {
           //if track is not audio track
-          if(track.kind !== 'audio'){
+          if (track.kind !== 'audio') {
             track.stop();
           }
         });
@@ -595,8 +604,6 @@ function Meet(props) {
           });
 
         });
-
-
 
       }
 
@@ -627,7 +634,24 @@ function Meet(props) {
         //* Creating a new RTCPeerConnection for the remote peer who joined the meet to store in our side
         remotePeers.current[userId] = new RTCPeerConnection(peerConstraints);
 
+        //* CREATE DATA CHANNEL FOR THE USER
+        remotePeers.current[userId].brodcastChannel = remotePeers.current[userId].createDataChannel("brodcast");
+
         //* EVENTS========================================
+
+        remotePeers.current[userId].brodcastChannel.onopen = () => {
+          console.log("Data Channel Opened");
+        }
+
+        remotePeers.current[userId].brodcastChannel.onmessage = (event) => {
+          console.log("Data Channel Message: ", event.data);
+          setMessages((prev) => [...prev,JSON.parse(event.data)]);
+        }
+
+        remotePeers.current[userId].brodcastChannel.onclose = () => {
+          console.log("Data Channel Closed");
+        }
+
 
         remotePeers.current[userId].ontrack = (event) => {
           addPeerData(socketId, event.streams[0], userId, name, true);
@@ -758,6 +782,32 @@ function Meet(props) {
     }
   };
 
+  const brodCastMessage = (message, userId = null) => {
+    try{
+      let brodcastChannel = null;
+      if (!userId) {
+        console.log("BRODCASTING TO ALL");
+        Object.keys(remotePeers.current)?.forEach((userId) => {
+          brodcastChannel = remotePeers.current[userId].brodcastChannel;
+          console.log("BRODCAST CHANNEL: ", brodcastChannel);
+          if (brodcastChannel && brodcastChannel.readyState === "open") {
+            brodcastChannel.send(JSON.stringify({ text: message, name: userInfo.name, time: new Date().toLocaleTimeString(), isMe: false }));
+          }
+        });
+      } else {
+        brodcastChannel = remotePeers.current[userId].brodcastChannel;
+        if (brodcastChannel && brodcastChannel.readyState === "open") {
+          brodcastChannel.send(JSON.stringify({ text: message, name: userInfo.name, time: new Date().toLocaleTimeString(), isMe: false }));
+        }
+      }
+      setMessages((prev) => [...prev, { text: message, name: userInfo.name, time: new Date().toLocaleTimeString(), isMe: true }]);
+  
+    }catch(err){
+      console.log(err);
+    }
+  }
+
+
   //=========================================================================================================================================================//
   //================================================================== SOCKET LISTENERS =====================================================================//
   useEffect(() => {
@@ -781,6 +831,24 @@ function Meet(props) {
           if (!remotePeers.current[userId]) {
             remotePeers.current[userId] = new RTCPeerConnection(peerConstraints);
 
+
+            //* If the user who sent the offer is the host, create a data channel for the user
+            remotePeers.current[userId].ondatachannel = (event) => {
+              remotePeers.current[userId].brodcastChannel = event.channel;
+              remotePeers.current[userId].brodcastChannel.onopen = () => {
+                console.log("Data Channel Opened");
+              }
+
+              remotePeers.current[userId].brodcastChannel.onmessage = (event) => {
+                console.log("Data Channel Message: ", event.data);
+                setMessages((prev) => [...prev, JSON.parse(event.data)]);
+              }
+
+              remotePeers.current[userId].brodcastChannel.onclose = () => {
+                console.log("Data Channel Closed");
+              }
+            }
+
             //* EVENTS========================================
 
             remotePeers.current[userId].ontrack = (event) => {
@@ -789,7 +857,7 @@ function Meet(props) {
 
             //* Once the Offer is created and set as the local description, the icecandidate event is fired
             remotePeers.current[userId].onicecandidate = (event) => {
-              if (!event.candidate) { return; };
+              if (!event.candidate) { return; }
               socket.emit('ice-candidate', { iceCandidate: event.candidate, userId, meetId });
             }
 
@@ -1027,6 +1095,49 @@ function Meet(props) {
     }
   }, [location.pathname]);
 
+  //=========================================================================================================================================================//
+
+  //functions to handle dragging of self video stream
+  const divRef = useRef(null);
+  let offsetX, offsetY;
+
+  const handleDragStart = (e) => {
+    if (seePeerList.length === 1) {
+      e.dataTransfer.setDragImage(new Image(), 0, 0); // Prevent default drag image
+      offsetX = e.clientX - divRef.current.getBoundingClientRect().left;
+      offsetY = e.clientY - divRef.current.getBoundingClientRect().top;
+    }
+  };
+
+  const handleDrag = (e) => {
+    if (seePeerList.length === 1) {
+      const newX = e.clientX;
+      const newY = e.clientY;
+      if (newX - offsetX >= 0 && newX - offsetX <= window.innerWidth - 200 && newY - offsetY >= 0 && newY - offsetY <= window.innerHeight - 230) {
+        divRef.current.style.transform = `translate(${newX - offsetX}px, ${newY - offsetY}px)`; // Move element
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+
+  };
+
+  const handleSideBar = (sideBarName) => {
+
+    if (sideBarShow === sideBarName) {
+      setSideBarShow(null);
+      setSideBar(!sideBar);
+    } else if (sideBarShow !== sideBarName && sideBar) {
+      setSideBarShow(sideBarName);
+    } else if (sideBarShow !== sideBarName && !sideBar) {
+      setSideBarShow(sideBarName);
+      setSideBar(!sideBar);
+    }
+  }
+
+  //=========================================================================================================================================================//
+
 
 
   // =========================================================================================================================================================//
@@ -1036,80 +1147,93 @@ function Meet(props) {
 
   return (
 
-    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden relative bg-black">
-
-      <div className={`flex-1 overflow-hidden grid ${seePeerList.length <= 1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row relative h-[90%] max-h-[90%]`}>
-        <div style={{
-          width: seePeerList.length == 1 ? "200px" : "100%",
-          height: seePeerList.length == 1 ? "150px" : "100%",
-          minHeight: seePeerList.length == 1 ? "150px" : (window.innerHeight * 0.9) / 2,
-          position: seePeerList.length == 1 ? "absolute" : "relative",
-          zIndex: 1,
-          borderWidth: seePeerList.length == 1 ? "1px" : "0px",
-          borderColor: "white",
-        }}
-          className="bg-black"
-        >
-          <MyStreamView
-            src={localMediaStream}
-            speaker={sound}
-            toggleSpeaker={handleSpeakerToggle}
-            microphone={!isMuted}
-            toggleMicrophone={() => toggleActiveMicrophone()}
-            camera={isCameraOn}
-            toggleCamera={() => toggleCamera()}
-            screenShare={isScreenSharing}
-            toggleScreenShare={toggleScreenCapture}
-            toggleParticipants={() => { setSideBar(!sideBar) }}
-            endCall={handleEndCall}
-            hideControls={true}
+    <div className="flex flex-1 flex-col h-screen max-h-screen  overflow-hidden bg-[#272828]">
+      <div className="flex flex-row flex-1 max-h-[90%] border-2">
+        <div className={`flex-1 relative overflow-hidden grid ${seePeerList.length <= 1 ? 'grid-cols-1' : 'grid-cols-3'} grid-flow-row transition-all duration-200 ease-linear`}>
+          <div
+            ref={divRef}
+            draggable={seePeerList.length === 1}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
             style={{
-              borderWidth: 1,
+              width: seePeerList.length == 1 ? "200px" : "100%",
+              height: seePeerList.length == 1 ? "150px" : "100%",
+              minHeight: seePeerList.length == 1 ? "150px" : (window.innerHeight * 0.9) / 2,
+              position: seePeerList.length == 1 ? "absolute" : "relative",
+              zIndex: 1,
+              borderWidth: seePeerList.length == 1 ? "1px" : "0px",
               borderColor: "white",
             }}
-          />
-        </div>
-        {
-          seePeerList.map((item, index) =>
-            <div
-              key={index.toString()}
+
+            className={`bg-[#272828] ${seePeerList.length == 1 ? 'cursor-move' : 'cursor-default'}`}
+          >
+            <MyStreamView
+              src={localMediaStream}
+              speaker={sound}
+              toggleSpeaker={handleSpeakerToggle}
+              microphone={!isMuted}
+              toggleMicrophone={() => toggleActiveMicrophone()}
+              camera={isCameraOn}
+              toggleCamera={() => toggleCamera()}
+              screenShare={isScreenSharing}
+              toggleScreenShare={toggleScreenCapture}
+              toggleParticipants={() => { setSideBar(!sideBar) }}
+              endCall={handleEndCall}
+              hideControls={true}
               style={{
-                height: "100%",
-                minHeight: (window.innerHeight * 0.9) / 2,
-                width: "100%",
-                maxWidth: "100%",
+                // height: "90%",
+                // margin:20,
+                padding: 20
               }}
-              className=" bg-black ">
-              <RemotePeerStream style={{
-                borderWidth: 1,
-                borderColor: "white",
-              }} sound={sound} key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
-                peerData[item]?.userId
-              } />
-            </div>
-          )
-        }
-      </div>
-      <div style={{
-        right: sideBar ? "0px" : "-100%",
-      }} className="w-[30%] z-50 h-screen max-h-screen flex flex-col absolute right-0 top-0 bottom-0 ease-in-out transition-all bg-white p-10">
-        <ParticipantDrawer
-          // eslint-disable-next-line react/no-unknown-property
-          participants={
-            Object.keys(peerData).map((item) => {
-              return {
-                userId: peerData[item]?.userId,
-                name: peerData[item]?.name,
-                socketId: peerData[item]?.socketId
-              }
-            })
+            />
+          </div>
+          {
+            seePeerList.map((item, index) =>
+              <div
+                key={index.toString()}
+                style={{
+                  height: "100%",
+                  minHeight: (window.innerHeight * 0.9) / 2,
+                  width: "100%",
+                  maxWidth: "100%",
+                }}
+                className=" bg-black ">
+                <RemotePeerStream style={{
+                  borderWidth: 1,
+                  borderColor: "white",
+                }} sound={sound} key={item} src={peerData[item]?.stream} name={peerData[item]?.name} loading={peerData[item]?.loading} userId={
+                  peerData[item]?.userId
+                } />
+              </div>
+            )
           }
-          isHost={userInfo?._id?.toString() === hostId?.toString()}
-          meetId={meetId}
-        />
+        </div>
+        <div style={{
+          width: sideBar ? "25%" : "0px",
+        }} className={`z-[1] max-h-full flex flex-col transition-all duration-150 ease-linear bg-white ${sideBar && 'px-7 p-5 my-2 mx-2'} rounded-lg `}>
+          {sideBarShow === "Participants" ? <ParticipantDrawer
+            // eslint-disable-next-line react/no-unknown-property
+            participants={
+              Object.keys(peerData).map((item) => {
+                return {
+                  userId: peerData[item]?.userId,
+                  name: peerData[item]?.name,
+                  socketId: peerData[item]?.socketId
+                }
+              })
+            }
+            isHost={userInfo?._id?.toString() === hostId?.toString()}
+            meetId={meetId}
+          />
+            : sideBarShow === "Messages" ? <InMeetMessages messages={messages} handleSendMessage={brodCastMessage} />
+              : null
+
+          }
+        </div>
       </div>
 
-      <div className='bg-black flex items-center justify-between w-full h-[10%] max-h-[10%]'>
+      <div className='bg-black flex items-center justify-between w-full h-[10%] max-h-[10%] border'>
         <div className='flex items-center gap-4 justify-center flex-1'>
           <div className='flex flex-col items-center'>
             {sound ?
@@ -1137,8 +1261,12 @@ function Meet(props) {
 
         <div className='flex flex-1 items-center gap-4 justify-center'>
           <div className='flex flex-col items-center'>
-            <BsPeopleFill className='text-white text-2xl' onClick={() => { setSideBar(!sideBar) }} />
+            <BsPeopleFill className='text-white text-2xl' onClick={() => { handleSideBar('Participants') }} />
             <p className='text-lg text-white'>Participants</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            <MdChat className='text-white text-2xl' onClick={() => { handleSideBar('Messages') }} />
+            <p className='text-lg text-white'>Messages</p>
           </div>
           <div className='flex flex-col items-center'>
             {

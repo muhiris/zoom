@@ -32,7 +32,7 @@ const MyStreamView = (props) => {
 
     return (
         <div style={props.style} className='relative flex flex-1 w-full h-full items-center justify-center'>
-            <video ref={videoRef} style={props.videoStyle} id='myVideo' autoPlay className='w-full h-full flex-1 object-contain bg-black' muted={true} playsInline />
+            <video ref={videoRef} style={props.videoStyle} id='myVideo' autoPlay className='w-full h-full min-w-full min-full max-w-full max-h-full flex-1 object-contain' muted={true} playsInline />
             {!props.hideControls && <div className='flex-1  flex items-center justify-between absolute bottom-0 w-full'>
                 <div className='flex items-center gap-4 justify-center flex-1'>
                     <div className='flex flex-col items-center'>
