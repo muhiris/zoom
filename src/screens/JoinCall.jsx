@@ -53,12 +53,10 @@ const JoinCall = (props) => {
 
     //DESTROY THE LOCAL MEDIA STREAM
     const destroyingMediaStream = () => {
-        
-        localMediaStream?.getTracks()?.forEach(
-            track => track.stop()
-        
-        );
 
+        localMediaStreamRef.current?.getTracks()?.forEach((track) => {
+            track?.stop();
+        });
 
         setLocalMediaStream(null);
     }
@@ -115,7 +113,7 @@ const JoinCall = (props) => {
 
         if (props?.from === "Call") {
 
-            props.joinMeeting({...payload,name:e.target.name.value}, camera, microphone, sound)
+            props.joinMeeting({ ...payload, name: e.target.name.value }, camera, microphone, sound)
 
         } else {
 
@@ -135,28 +133,11 @@ const JoinCall = (props) => {
 
 
     useEffect(() => {
+
         startLocalMediaStram();
-
-        window.addEventListener('popstate', ()=>{
-            localMediaStreamRef.current?.getTracks()?.forEach(
-                track => track.stop()
-            );
-            localMediaStreamRef.current = null;
-            destroyingMediaStream();
-        })
-
 
         return () => {
             destroyingMediaStream();
-            window.removeEventListener('popstate', ()=>{
-                console.log("I AM POPSTATE");
-                localMediaStream?.getTracks()?.forEach(
-                    track => track.stop()
-                
-                );
-                localMediaStreamRef.current = null;
-                destroyingMediaStream();
-            })
         }
     }, [])
 

@@ -9,7 +9,7 @@ import { userLogout } from "../redux/slice/user/userAction";
 import { toast } from "react-toast";
 
 function HamburgerNav() {
-  
+
   const dispatch = useDispatch();
   const socket = useSocket();
   const { userInfo } = useSelector(state => state.user);
@@ -40,16 +40,23 @@ function HamburgerNav() {
         <HiMenu className="h-8 w-8" />
       </button>
       <aside
-        className={`fixed lg:relative top-0 left-0 lg:static bg-black h-screen w-60 lg:w-16 transition-transform duration-300 ease-in-out transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ` }
+        className={`h-screen max-h-screen overflow-y-auto fixed lg:relative top-0 left-0 lg:static bg-black w-60 lg:w-16 transition-transform duration-300 ease-in-out transform ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          } `}
       >
         <ul className="flex flex-col items-center gap-10 mt-10 text-white text-xl justify-between w-full p-3">
-        <li>
+          <li>
             <Link to={"/"}>
               <img src={LogoWithText} alt="" style={{ width: "120px" }} />
             </Link>
           </li>
+          {userInfo?._id && <> <li>
+            <NavLink to="/chat">Chat</NavLink>
+          </li>
+            <li>
+              <NavLink to="/myMeetings">Meetings</NavLink>
+            </li>
+          </>
+          }
           <li>
             <NavLink to="/details">About Us</NavLink>
           </li>
@@ -78,14 +85,14 @@ function HamburgerNav() {
           </li>
             :
             <li onClick={() => {
-              dispatch(userLogout()).then((res)=>{
-                if(userLogout.fulfilled.match(res)){
+              dispatch(userLogout()).then((res) => {
+                if (userLogout.fulfilled.match(res)) {
                   dispatch(logout())
-                  if(socket){
+                  if (socket) {
                     socket.disconnect();
                   }
                 }
-              }).catch((err)=>{
+              }).catch((err) => {
                 toast.error("Error Logging Out")
               })
             }} className="lg:hidden">
