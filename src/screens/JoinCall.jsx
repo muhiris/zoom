@@ -6,100 +6,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { joinMeet } from '../redux/slice/meet/meetAction';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toast';
+import { useStream } from '../context/streamContext';
 
 const JoinCall = (props) => {
 
-    const [localMediaStream, setLocalMediaStream] = useState(null);
-    const localMediaStreamRef = useRef(null);
-    const [camera, setCamera] = useState(true);
-    const [microphone, setMicrophone] = useState(true);
-    const [sound, setSound] = useState(true);
-    const isVoiceOnly = !camera;
+   
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { loading: meetLoading, meet, error: meetError } = useSelector(state => state.meet);
-    const [mediaSource, setMediaSource] = useState('camera');
+    const {stream,startLocalMediaStream,destroyingMediaStream,toggleCamera,toggleMicrophone,toggleSound,camera,sound,microphone} = useStream();
 
-
-
-    let mediaConstraints = {
-        audio: { 'echoCancellation': true, deviceId: 'default' },
-        video: {
-            frameRate: 30,
-            facingMode: true,
-            mediaSource: mediaSource,
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 }
-        }
-    };
-    // START THE LOCAL MEDIA STREAM
-    const startLocalMediaStram = async () => {
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-            if (isVoiceOnly) {
-                let videoTrack = mediaStream.getVideoTracks()[0];
-                videoTrack.enabled = false;
-                setCamera(false);
-            }
-            else {
-                setCamera(true);
-            }
-            setLocalMediaStream(mediaStream);
-            localMediaStreamRef.current = mediaStream;
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    //DESTROY THE LOCAL MEDIA STREAM
-    const destroyingMediaStream = () => {
-
-        localMediaStreamRef.current?.getTracks()?.forEach((track) => {
-            track?.stop();
-        });
-
-        setLocalMediaStream(null);
-    }
-
-    const toggleCamera = async () => {
-        try {
-            const videoTracks = await localMediaStream.getVideoTracks();
-            if (videoTracks.length > 0) {
-                const videoTrack = videoTracks[0];
-                videoTrack.enabled = !videoTrack.enabled;
-            }
-            setCamera(!camera);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    const toggleActiveMicrophone = async () => {
-
-        try {
-            const audioTrack = localMediaStream.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-            }
-            setMicrophone(!microphone);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    const handleSpeakerToggle = () => {
-        try {
-
-            const audioTracks = localMediaStream.getAudioTracks();
-            if (audioTracks.length > 0) {
-                const audioTrack = audioTracks[0];
-                audioTrack.enabled = !audioTrack.enabled;
-            }
-            setSound(!sound);
-        } catch (err) {
-            console.log(err);
-        }
-    }
 
 
     const handleJoinMeeting = (e) => {
@@ -132,14 +48,16 @@ const JoinCall = (props) => {
     }
 
 
+
     useEffect(() => {
 
-        startLocalMediaStram();
+        startLocalMediaStream();
 
         return () => {
             destroyingMediaStream();
         }
     }, [])
+
 
     return (
         <div className='flex flex-1 flex-col md:flex-row  gap-10 p-20'>
@@ -147,13 +65,13 @@ const JoinCall = (props) => {
                 <MyStreamView
                     style={{ flex: 1 }}
                     joinCallScreen={true}
-                    src={localMediaStream}
+                    src={stream}
                     microphone={microphone}
-                    toggleMicrophone={toggleActiveMicrophone}
+                    toggleMicrophone={toggleMicrophone}
                     toggleCamera={toggleCamera}
                     camera={camera}
                     speaker={sound}
-                    toggleSpeaker={handleSpeakerToggle}
+                    toggleSpeaker={toggleSound}
                 />
             </div>
             <div className='flex flex-col py-5'>
