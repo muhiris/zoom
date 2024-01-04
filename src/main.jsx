@@ -16,11 +16,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <Provider store={store}>
       <SocketProvider>
-        <StreamProvider>
-          <PeerProvider>
+        <PeerProvider>
+          <StreamProvider>
             <App />
-          </PeerProvider>
-        </StreamProvider>
+          </StreamProvider>
+        </PeerProvider>
       </SocketProvider>
     </Provider>
   </BrowserRouter>

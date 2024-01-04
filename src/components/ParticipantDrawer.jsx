@@ -6,7 +6,7 @@ import { IoIosAddCircle } from "react-icons/io";
 import { BsFillCameraVideoFill, BsFillCameraVideoOffFill, BsFillMicFill, BsFillMicMuteFill } from "react-icons/bs";
 
 
-const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) => {
+const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost, thisIsHost }) => {
 
     const socket = useSocket();
     const [mic, setMic] = useState(true);
@@ -27,7 +27,7 @@ const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) =
     return (
         <div className="flex flex-row items-center justify-between flex-1">
             <p className="text-md">{
-                item.name
+                item.name + (thisIsHost ? " (Host)" : "")
             }</p>
             <div className="flex flex-row items-center gap-4">
                 <IoIosAddCircle onClick={() => handleAddUser(item.userId)} className="text-2xl text-primary cursor-pointer" />
@@ -53,7 +53,7 @@ const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost }) =
 }
 
 
-const ParticipantDrawer = ({ participants, isHost, meetId, style }) => {
+const ParticipantDrawer = ({ participants, isHost, meetId, style, hostId }) => {
     const socket = useSocket();
     const { loading, chats } = useSelector(state => state.chat);
     const { userInfo } = useSelector(state => state.user);
@@ -80,7 +80,7 @@ const ParticipantDrawer = ({ participants, isHost, meetId, style }) => {
 
     return (
         <div style={style} className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
-            <p className="text-lg font-bold text-center">Participants</p>
+            <p className="text-lg">Participants</p>
             {isHost && <div className="flex flex-row items-center justify-center gap-3">
                 <Button2 onClick={() => handleMuteAll()} style={{ flex: 1 }} text={allMuted ? "Unmute All" : "Mute All"} />
                 <Button2 onClick={() => handleVideoOffAll()} style={{ flex: 1 }} text={allVideoOff ? "Resume Video" : "Pause Video"} />
@@ -93,6 +93,7 @@ const ParticipantDrawer = ({ participants, isHost, meetId, style }) => {
                             enableAdd={[...chats].filter((chat) => chat?.participants?.includes(item.userId)).length > 0 ? false : true}
                             meetId={meetId}
                             isHost={isHost}
+                            thisIsHost={hostId == item.userId}
                         />
                     )
                 }

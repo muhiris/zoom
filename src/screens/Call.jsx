@@ -1,20 +1,14 @@
 /* eslint-disable react/no-unknown-property */
-import React, { useEffect, useRef, useState } from "react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import imgCall from "../assets/imgCall.png";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePeer } from '../context/peerContext';
 import { useLocation, useNavigate } from "react-router-dom";
 import MyStreamView from "../components/MyStreamView";
-import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import RemotePeerStream from "../components/RemotePeerStream";
 import { useSocket } from "../context/socketContext";
 import { toast } from "react-toast";
-import { IoIosAddCircle, } from "react-icons/io";
-import { BsFillMicFill, BsFillMicMuteFill, BsFillCameraVideoFill, BsFillCameraVideoOffFill } from "react-icons/bs";
+import { BsFillMicMuteFill } from "react-icons/bs";
 import Button from "../components/Button";
-import Button2 from "../components/Button2";
 import { BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill, BsPeopleFill } from 'react-icons/bs';
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
 import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
@@ -24,6 +18,9 @@ import InMeetMessages from "../components/InMeetMessages";
 import { MdChat } from "react-icons/md";
 import ParticipantDrawer from "../components/ParticipantDrawer";
 import { useStream } from "../context/streamContext";
+import { ImCross } from "react-icons/im";
+
+
 
 
 
@@ -43,8 +40,7 @@ function Meet(props) {
 
   // custom hooks
   let { peerData, addPeerData, removePeerData, removeAllPeerData, addPeerConnection, ChangeLoadingState } = usePeer();
-  const { stream, isScreenSharing, startLocalMediaStream, toggleScreenSharing, destroyingMediaStream, toggleCamera, toggleMicrophone, toggleSound, camera, sound, microphone, toggleMuteByHost, toggleVideoPauseByHost } = useStream();
-  const streamRef = useRef(stream||null);
+  const { stream, localMediaStreamRef, displayMediaStreamRef, isScreenSharing, startLocalMediaStream, toggleScreenSharing, stopScreenSharing, destroyingMediaStream, toggleCamera, toggleMicrophone, toggleSound, camera, sound, microphone, toggleMuteByHost, toggleVideoPauseByHost } = useStream();
 
   // managing peer connections
   let remotePeers = useRef({});
@@ -110,95 +106,20 @@ function Meet(props) {
   }, [peerData]);
 
 
+  // take user to join call page if refresh and show confirmation modal if user tries to leave the page
   useEffect(() => {
 
-    if(!streamRef.current){
-      streamRef.current = stream;
+    const handleBeforeUnload = (e) => {
+      handleEndCall();
+      navigate(`/call/${meetId}`);
     }
 
-  }, [stream]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
-
-
-  // // DEVICE CHANGE HANDLER INITIALIZATION
-  // useEffect(() => {
-  //   let hasDeviceChangeOccurred = false;
-
-  //   const handleDeviceChange = async () => {
-  //     try {
-  //       const devices = await navigator.mediaDevices.enumerateDevices();
-  //       let audioInputDeviceId;
-  //       let audioOutputDeviceId;
-  //       console.log('Available devices:', devices);
-
-  //       devices.forEach((device) => {
-  //         if (device.kind === 'audioinput') {
-  //           audioInputDeviceId = device.deviceId === 'default' ? undefined : device.deviceId;
-  //         }
-  //         if (device.kind === 'audiooutput') {
-  //           audioOutputDeviceId = device.deviceId === 'default' ? undefined : device.deviceId;
-  //         }
-  //       });
-
-  //       // Check if there is a change in audio input or output devices
-  //       if (
-  //         audioInputDeviceId !== mediaConstraints.audio.inputDeviceId
-  //         || audioOutputDeviceId !== mediaConstraints.audio.outputDeviceId
-  //       ) {
-  //         hasDeviceChangeOccurred = true;
-  //         mediaConstraints.audio.inputDeviceId = audioInputDeviceId;
-  //         mediaConstraints.audio.outputDeviceId = audioOutputDeviceId;
-  //         console.log('Audio device change detected. Updating media constraints:', mediaConstraints);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error handling device change:', error);
-  //     }
-
-  //     // Trigger renegotiation after handling device change
-  //     handleRenegotiation();
-  //   };
-
-  //   const handleRenegotiation = async () => {
-  //     if (hasDeviceChangeOccurred) {
-  //       // Replace the tracks in the local media stream
-  //       const newMediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-  //       newMediaStream.getTracks().forEach((track) => {
-  //         locaMediaRef.current.getTracks().forEach((oldTrack) => {
-  //           if (oldTrack.kind === track.kind) {
-  //             locaMediaRef.current.removeTrack(oldTrack);
-  //           }
-  //         });
-  //         locaMediaRef.current.addTrack(track);
-  //       });
-  //       setLocalMediaStream(locaMediaRef.current);
-
-  //       // Replace the tracks in the remote media streams
-  //       Object.keys(remotePeers.current).forEach((userId) => {
-  //         remotePeers.current[userId].getSenders().forEach((sender) => {
-  //           newMediaStream.getTracks().forEach((track) => {
-  //             if (track.kind === sender.track.kind) {
-  //               sender.replaceTrack(track);
-  //             }
-  //           });
-  //         });
-  //       });
-
-
-  //       hasDeviceChangeOccurred = false;
-  //     }
-  //   };
-
-  //   // Initial device enumeration
-  //   handleDeviceChange();
-
-  //   // Listen for device changes
-  //   navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
-
-  //   // Cleanup: Remove the event listener when the component unmounts
-  //   return () => {
-  //     navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
-  //   };
-  // }, []); // No dependencies, so it runs once on mount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, []);
 
 
 
@@ -208,16 +129,12 @@ function Meet(props) {
   //========================================================================== LOCAL STREAM HANDLERS ========================================================//
 
 
-
-
   const handleEndCall = () => {
     // destroyDataChannel();
     // destroyingMediaStream();
     cleanupConnections();
 
-
   }
-
 
   //=========================================================================================================================================================//
   // ===================================================================== REUSABLE FUNCTIONS ===============================================================//
@@ -276,8 +193,8 @@ function Meet(props) {
         }
 
 
-        streamRef.current?.getTracks()?.forEach((track) => {
-          remotePeers.current[userId].addTrack(track, streamRef.current);
+        localMediaStreamRef.current?.getTracks()?.forEach((track) => {
+          remotePeers.current[userId].addTrack(track, localMediaStreamRef.current);
         });
 
 
@@ -458,9 +375,9 @@ function Meet(props) {
               socket.emit('ice-candidate', { iceCandidate: event.candidate, userId, meetId });
             }
 
-            console.log("Local Media Ref: ", streamRef.cuurent);
-            streamRef.current?.getTracks()?.forEach((track) => {
-              remotePeers.current[userId].addTrack(track, streamRef.current);
+            console.log("Local Media Ref: ", localMediaStreamRef.cuurent);
+            localMediaStreamRef.current?.getTracks()?.forEach((track) => {
+              remotePeers.current[userId].addTrack(track, localMediaStreamRef.current);
             });
 
             remotePeers.current[userId]?.addEventListener('iceconnectionstatechange', (event) => {
@@ -718,19 +635,31 @@ function Meet(props) {
 
   //=========================================================================================================================================================//
 
+  const replaceTrackForPeers = (track) => {
+    Object.keys(remotePeers.current).forEach((userId) => {
+      remotePeers.current[userId].getSenders().forEach((sender) => {
+        //replace video track in peer connection with video from display media
+        if (sender.track.kind === 'video') {
+          sender.replaceTrack(track.getVideoTracks()[0]);
+        }
+
+      });
+
+
+    });
+  }
+
+
   const handleToggleScreenShare = () => {
 
-    toggleScreenSharing().then(() => {
-      Object.keys(remotePeers.current).forEach((userId) => {
-        remotePeers.current[userId].getSenders().forEach((sender) => {
+    toggleScreenSharing().then((s) => {
+      try {
 
-          //replace video track in peer connection with video from display media
-          if (sender.track.kind === 'video') {
-            sender.replaceTrack(stream.getVideoTracks()[0]);
-          }
+        replaceTrackForPeers(s);
 
-        });
-      });
+      } catch (err) {
+        console.log(err);
+      }
     }).catch((err) => {
       console.log(err);
     });
@@ -782,6 +711,7 @@ function Meet(props) {
                 // margin:20,
                 padding: 20
               }}
+              name={name}
             />
           </div>
           {
@@ -806,6 +736,11 @@ function Meet(props) {
           }
         </div>
         <div className={`z-[1] max-h-full flex flex-col transition-all duration-150 ease-linear bg-white ${sideBar && 'px-7 p-5 my-2 mx-2'} ${sideBar ? "lg:w-[25%] md:w-[30%] w-[40%]" : "w-0"} rounded-lg `}>
+          {sideBar && <ImCross style={{
+            alignSelf: "flex-end",
+          }}
+            onClick={() => { setSideBar(!sideBar); setSideBarShow(null) }}
+          />}
           {sideBarShow === "Participants" ? <ParticipantDrawer
             // eslint-disable-next-line react/no-unknown-property
             participants={
@@ -818,6 +753,7 @@ function Meet(props) {
               })
             }
             isHost={userInfo?._id?.toString() === hostId?.toString()}
+            hostId={hostId}
             meetId={meetId}
           />
             : sideBarShow === "Messages" ? <InMeetMessages messages={messages} handleSendMessage={brodCastMessage} />

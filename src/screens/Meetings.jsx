@@ -105,9 +105,9 @@ const Meetings = () => {
 
     return (
         <div className='flex h-screen max-h-screen overflow-hidden flex-col gap-4 relative p-10'>
-            <div className="flex flex-1 flex-col gap-5">
+            <div className="flex flex-1 flex-col gap-5 max-h-full overflow-hidden">
                 <p className="text-2xl font-bold">Schedules Meetings</p>
-                <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
                     {
                         schedules?.map((schedule, index) =>
                             <ScheduleListItem key={index.toString()} {...schedule} loading={scheduleLoading} clicked={id?.toString() === schedule._id.toString()} onJoin={(id, requirePasscode) => handleJoinMeet(id, requirePasscode)} />

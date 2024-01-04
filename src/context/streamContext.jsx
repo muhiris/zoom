@@ -86,6 +86,20 @@ export const StreamProvider = ({ children }) => {
         if (stream) {
             setStream(null);
         }
+
+        if (displayMediaStreamRef.current) {
+            displayMediaStreamRef.current.getTracks()?.forEach((track) => {
+                track?.stop();
+            });
+            displayMediaStreamRef.current = null;
+        }
+
+        //resetting the state
+        setCamera(true);
+        setMicrophone(true);
+        setSound(true);
+        setIsScreenSharing(false);
+
     }
 
 
@@ -94,7 +108,7 @@ export const StreamProvider = ({ children }) => {
 
         try {
             //removing audio track from the display media stream
-            displayMediaStreamRef.current.removeTrack(displayMediaStreamRef.current.getAudioTracks()[0]);
+            displayMediaStreamRef.current.removeTrack(displayMediaStreamRef?.current?.getAudioTracks()[0]);
 
             //stopping the display media stream
             displayMediaStreamRef.current?.getTracks()?.forEach((track) => {
@@ -106,6 +120,8 @@ export const StreamProvider = ({ children }) => {
             displayMediaStreamRef.current = null;
 
             setIsScreenSharing(false);
+            setStream(localMediaStreamRef.current);
+            return localMediaStreamRef.current;
             // setCamera(true);
         } catch (err) {
             console.log(err);
@@ -134,19 +150,21 @@ export const StreamProvider = ({ children }) => {
 
                 //* adding a listner to catch stop screen sharing event
                 displayMediaStreamRef.current.getVideoTracks()[0].addEventListener('ended', () => {
-                    stopScreenSharing();
-                    setStream(localMediaStreamRef.current);
+
+                    return stopScreenSharing();
 
                 });
 
+                if (camera) { toggleCamera(); }
+
+
+                return displayMediaStreamRef.current;
+
             } else {
 
-                stopScreenSharing();
-                setStream(localMediaStreamRef.current);
+                return stopScreenSharing();
 
             }
-
-            return true;
 
         } catch (err) {
             console.log(err);
@@ -221,7 +239,7 @@ export const StreamProvider = ({ children }) => {
 
 
     return (
-        <StreamContext.Provider value={{ stream, camera, sound, microphone, isScreenSharing, startLocalMediaStream, destroyingMediaStream, toggleScreenSharing, toggleCamera, toggleMicrophone, toggleSound, toggleMuteByHost, toggleVideoPauseByHost }}>
+        <StreamContext.Provider value={{ stream, localMediaStreamRef, displayMediaStreamRef, camera, sound, microphone, isScreenSharing, startLocalMediaStream, destroyingMediaStream, toggleScreenSharing, stopScreenSharing, toggleCamera, toggleMicrophone, toggleSound, toggleMuteByHost, toggleVideoPauseByHost }}>
             {children}
         </StreamContext.Provider>
     );
