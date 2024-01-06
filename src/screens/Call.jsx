@@ -654,8 +654,20 @@ function Meet(props) {
 
     toggleScreenSharing().then((s) => {
       try {
+      
+        if (s.sharing) {
+          //* adding a listner to catch stop screen sharing event
+          console.log("START SCREEN SHARING EVENT FIRED: ",s);
+          s.stream.getVideoTracks()[0].addEventListener('ended', () => {
+            console.log("STOP SCREEN SHARING EVENT FIRED");
+            let re = stopScreenSharing();
+            replaceTrackForPeers(re);
 
-        replaceTrackForPeers(s);
+          });
+
+        }
+
+        replaceTrackForPeers(s.stream);
 
       } catch (err) {
         console.log(err);

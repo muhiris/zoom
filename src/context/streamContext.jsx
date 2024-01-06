@@ -119,6 +119,7 @@ export const StreamProvider = ({ children }) => {
             });
             displayMediaStreamRef.current = null;
 
+            console.log("I STOPPED SCREEN SHARING");
             setIsScreenSharing(false);
             setStream(localMediaStreamRef.current);
             return localMediaStreamRef.current;
@@ -148,21 +149,14 @@ export const StreamProvider = ({ children }) => {
 
                 setStream(displayMediaStreamRef.current);
 
-                //* adding a listner to catch stop screen sharing event
-                displayMediaStreamRef.current.getVideoTracks()[0].addEventListener('ended', () => {
-
-                    return stopScreenSharing();
-
-                });
-
                 if (camera) { toggleCamera(); }
 
 
-                return displayMediaStreamRef.current;
+                return {stream:displayMediaStreamRef.current,sharing:true};
 
             } else {
 
-                return stopScreenSharing();
+                return {stream:stopScreenSharing(),sharing:false}
 
             }
 
