@@ -2,16 +2,41 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import "../index.css";
+import { useDispatch, useSelector } from "react-redux";
+import { createMeet } from "../redux/slice/meet/meetAction";
+import Button from "./Button";
 
-function HeroSection({ heading, paragraph, btn1, btn2, img,redirect1,redirect2 }) {
+function HeroSection({ heading, paragraph, btn1, btn2, img, redirect1, redirect2 }) {
   const navigate = useNavigate()
+  const dispatch = useDispatch();
+  const { loading: meetLoading } = useSelector(state => state.meet);
+  const { userInfo } = useSelector(state => state.user);
 
   const handleButtonClick1 = () => {
-    navigate(`/${redirect1}`);
+    if (redirect1 === "call") {
+      if(!userInfo?._id) return navigate(`/signup`)
+      dispatch(createMeet({})).then((res) => {
+        if (createMeet.fulfilled.match(res)) {
+          navigate(`/call/${res?.payload?.data?._id}`, { state: { video: true, audio: true, meetId: res.payload.data._id, name: userInfo.name, hostId:res?.payload?.data?.host } })
+        }
+      })
+    } else {
+      navigate(`/${redirect1}`);
+    }
   };
 
   const handleButtonClick2 = () => {
-    navigate(`/${redirect2}`);
+    if (redirect2 === "joinCall") {
+      if (userInfo?._id) {
+        return navigate(`/joinCall`)
+      } else {
+        return navigate(`/signup`)
+      }
+    } else {
+      return navigate(`/${redirect2}`);
+    }
+
+
   };
   return (
     <>
@@ -20,12 +45,10 @@ function HeroSection({ heading, paragraph, btn1, btn2, img,redirect1,redirect2 }
           <h1 className="text-5xl my-12 font-bold space-x-2">{heading}</h1>
           <p className="text-2xl space-x-6 mb-8">{paragraph}</p>
           <div className="flex-between">
-            <button onClick={handleButtonClick1} className="text-white px-6 py-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out">
-              {btn1}
-            </button>
-            <button onClick={handleButtonClick2} className="bg-white text-black border-2 border-[#3f3f3f] ml-6 px-6 py-4  rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out">
-              {btn2}
-            </button>
+            <Button loading={meetLoading} text={btn1} onClick={handleButtonClick1} className="text-white px-6 py-4 mr-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
+            <Button disabled={meetLoading} text={btn2} onClick={handleButtonClick2} className="text-white px-6 py-4 bg-primary rounded-2xl hover:shadow-secondary shadow-sm transition-all duration-300 ease-in-out" />
+
+
           </div>
         </div>
         <img src={img} alt="" className=" mt-10" />
