@@ -20,6 +20,7 @@ const SignIn = () => {
   const { loading: authLoading, userInfo, error: authError } = useSelector(state => state.user);
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
+  const from  = location.state?.from || null;
   const user = queryParams.get("user");
   const accessToken = queryParams.get("accessToken");
   const refreshToken = queryParams.get("refreshToken");
@@ -41,7 +42,11 @@ const SignIn = () => {
         if (userLogin.fulfilled.match(res)) {
           console.log(res);
           toast.success("Login Successfull");
-          navigate("/");
+          if (from) {
+            navigate(from);
+          } else {
+            navigate("/");
+          }
         }
       })
     } catch (err) {

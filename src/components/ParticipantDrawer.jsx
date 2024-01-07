@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "../context/socketContext";
 import { useSelector } from "react-redux";
 import Button2 from "./Button2";
@@ -6,11 +6,31 @@ import { IoIosAddCircle } from "react-icons/io";
 import { BsFillCameraVideoFill, BsFillCameraVideoOffFill, BsFillMicFill, BsFillMicMuteFill } from "react-icons/bs";
 
 
-const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost, thisIsHost }) => {
+const ListItem = ({ item, handleAddUser, loading, enableAdd, meetId, isHost, thisIsHost, allMuted, allVideoOff }) => {
 
     const socket = useSocket();
     const [mic, setMic] = useState(true);
     const [video, setVideo] = useState(true);
+
+
+    useEffect(() => {
+
+        if (allMuted) {
+            setMic(false);
+        } else {
+            setMic(true);
+        }
+
+    }, [allMuted]);
+
+    useEffect(() => {
+            
+            if (allVideoOff) {
+                setVideo(false);
+            } else {
+                setVideo(true);
+            }
+    }, [allVideoOff]);
 
 
     const handleMic = () => {
@@ -77,6 +97,7 @@ const ParticipantDrawer = ({ participants, isHost, meetId, style, hostId }) => {
         setAllMuted(!allMuted);
     }
 
+    console.log("allMuted", allMuted);
 
     return (
         <div style={style} className="flex-1 flex flex-col gap-4 max-h-full overflow-hidden">
@@ -93,6 +114,8 @@ const ParticipantDrawer = ({ participants, isHost, meetId, style, hostId }) => {
                             enableAdd={[...chats].filter((chat) => chat?.participants?.includes(item.userId)).length > 0 ? false : true}
                             meetId={meetId}
                             isHost={isHost}
+                            allMuted={allMuted}
+                            allVideoOff={allVideoOff}
                             thisIsHost={hostId == item.userId}
                         />
                     )

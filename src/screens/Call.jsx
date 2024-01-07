@@ -7,18 +7,13 @@ import MyStreamView from "../components/MyStreamView";
 import RemotePeerStream from "../components/RemotePeerStream";
 import { useSocket } from "../context/socketContext";
 import { toast } from "react-toast";
-import { BsFillMicMuteFill } from "react-icons/bs";
-import Button from "../components/Button";
-import { BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill, BsPeopleFill } from 'react-icons/bs';
-import { MdOutlineScreenShare, MdOutlineStopScreenShare } from 'react-icons/md';
-import { GiSpeaker, GiSpeakerOff } from 'react-icons/gi';
 import { joinMeet } from "../redux/slice/meet/meetAction";
 import JoinCall from "./JoinCall";
 import InMeetMessages from "../components/InMeetMessages";
-import { MdChat } from "react-icons/md";
 import ParticipantDrawer from "../components/ParticipantDrawer";
 import { useStream } from "../context/streamContext";
 import { ImCross } from "react-icons/im";
+import CallControls from "../components/CallControls";
 
 
 
@@ -644,8 +639,6 @@ function Meet(props) {
         }
 
       });
-
-
     });
   }
 
@@ -654,12 +647,10 @@ function Meet(props) {
 
     toggleScreenSharing().then((s) => {
       try {
-      
+
         if (s.sharing) {
           //* adding a listner to catch stop screen sharing event
-          console.log("START SCREEN SHARING EVENT FIRED: ",s);
           s.stream.getVideoTracks()[0].addEventListener('ended', () => {
-            console.log("STOP SCREEN SHARING EVENT FIRED");
             let re = stopScreenSharing();
             replaceTrackForPeers(re);
 
@@ -775,60 +766,12 @@ function Meet(props) {
         </div>
       </div>
 
-      <div className='bg-black flex items-center justify-between w-full h-[10%] max-h-[10%] border'>
-        <div className='flex items-center gap-4 justify-center flex-1'>
-          <div className='flex flex-col items-center'>
-            {sound ?
-              <GiSpeaker className='text-white text-2xl' onClick={toggleSound} /> :
-              <GiSpeakerOff className='text-white text-2xl' onClick={toggleSound} />
-            }
-            <p className='text-lg text-white'>Speaker</p>
-          </div>
-          <div className='flex flex-col items-center'>
-            {microphone ?
-              <BsMicFill className='text-white text-2xl' onClick={toggleMicrophone} /> :
-              <BsFillMicMuteFill className='text-white text-2xl' onClick={toggleMicrophone} />
-            }
-            <p className='text-lg text-white'>Microphone</p>
-          </div>
-          <div className='flex flex-col items-center'>
-            {
-              camera ?
-                <BsCameraVideoFill className='text-white text-2xl' onClick={toggleCamera} /> :
-                <BsCameraVideoOffFill className='text-white text-2xl' onClick={toggleCamera} />
-            }
-            <p className='text-lg text-white'>Camera</p>
-          </div>
-        </div>
+      <CallControls
 
-        <div className='flex flex-1 items-center gap-4 justify-center'>
-          <div className='flex flex-col items-center'>
-            <BsPeopleFill className='text-white text-2xl' onClick={() => { handleSideBar('Participants') }} />
-            <p className='text-lg text-white'>Participants</p>
-          </div>
-          <div className='flex flex-col items-center'>
-            <MdChat className='text-white text-2xl' onClick={() => { handleSideBar('Messages') }} />
-            <p className='text-lg text-white'>Messages</p>
-          </div>
-          <div className='flex flex-col items-center'>
-            {
-              isScreenSharing ?
-                <MdOutlineStopScreenShare className='text-white text-2xl' onClick={handleToggleScreenShare} /> :
-                <MdOutlineScreenShare className='text-white text-2xl' onClick={handleToggleScreenShare} />
-            }
-            <p className='text-lg text-white'>Screen Share</p>
-          </div>
-        </div>
-
-        <div className='flex flex-1 items-center justify-center gap-4'>
-          <Button style={{ backgroundColor: "red" }} text={"End Call"} onClick={handleEndCall} />
-
-        </div>
-
-      </div>
-
-
-
+        handleSideBar={handleSideBar}
+        handleEndCall={handleEndCall}
+        handleToggleScreenShare={handleToggleScreenShare}
+      />
 
     </div>
   );
@@ -839,9 +782,8 @@ const Call = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  let { loading, error, userInfo, success } = useSelector((state) => state.user);
+  let { userInfo } = useSelector((state) => state.user);
   const { state } = useLocation();
-  // const { meetId, name, video, audio, hostId } = state;
   const [data, setData] = useState({
     meetId: state?.meetId || null,
     name: state?.name || null,
@@ -849,6 +791,7 @@ const Call = () => {
     audio: state?.audio || null,
     hostId: state?.hostId || null
   });
+  const [loading, setLoading] = useState(true);
 
 
 
@@ -876,17 +819,25 @@ const Call = () => {
 
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) {
-      navigate('/login');
+      navigate('/login',{state:{from:`/call/${location.pathname.split('/')[2]}`}});
     }
+    setLoading(false);
 
   }, [userInfo?._id])
 
   return (
 
-    data?.meetId ?
+    (data?.meetId && !loading) ?
       <Meet state={data} />
       :
-      <JoinCall from={"Call"} joinMeeting={handleJoinMeeting} meetId={location.pathname.split('/')[2]} />
+      (!data?.meetId && !loading) ?
+        <JoinCall from={"Call"} joinMeeting={handleJoinMeeting} meetId={location.pathname.split('/')[2]} />
+        :
+        <div className="flex flex-1 justify-center items-center bg-black w-screen h-screen">
+          <div className="flex flex-col justify-center items-center">
+            <h1 className="text-2xl font-bold text-white mt-5">Loading...</h1>
+          </div>
+        </div>
 
   )
 
